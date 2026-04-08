@@ -362,8 +362,12 @@ function calcGeRate(ge, planGE) {
   const totalDays = weekdays + weekendDays;
   if (totalDays === 0) return { done: false, x: remaining, y: remaining };
 
-  const avg = remaining / totalDays;
-  return { done: false, x: Math.floor(avg), y: Math.ceil(avg) };
+  // X = mínimo a vender cada día entre semana (al menos 1 si hay pendiente)
+  const x = weekdays > 0 ? Math.max(1, Math.floor(remaining / totalDays)) : 0;
+  // Y = lo que queda después de cubrir semana con X, repartido en días de finde
+  const remainingWeekend = Math.max(0, remaining - x * weekdays);
+  const y = weekendDays > 0 ? Math.max(x, Math.ceil(remainingWeekend / weekendDays)) : x;
+  return { done: false, x, y };
 }
 
 /* ── PARSE SHEETS ────────────────────────────────────────── */
