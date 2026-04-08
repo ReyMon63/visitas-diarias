@@ -112,11 +112,25 @@
   .sams        .order-num { background: rgba(63,185,80,0.2);  color: #3fb950; border: 1.5px solid #3fb950; }
 
   .card-info { flex: 1; min-width: 0; }
+  .store-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
   .store-name {
     font-size: 1.05rem; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 5px;
+    flex: 1; min-width: 0;
   }
+  .ge-rate {
+    font-size: 1.05rem; font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
+    color: #e6edf3;
+  }
+  .ge-rate.done { color: #3fb950; }
+  .ge-rate .ge-sep { color: #484f58; font-weight: 400; margin: 0 3px; }
   .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; }
   .tag { border-radius: 6px; padding: 2px 9px; font-weight: 500; white-space: nowrap; }
   .tag-format { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
@@ -331,6 +345,27 @@ function vsAAClass(v) {
   return n >= 0 ? 'pos' : 'neg';
 }
 
+/* ── GE DAILY RATE ───────────────────────────────────────── */
+function calcGeRate(ge, planGE) {
+  if (isNullish(planGE) || Number(planGE) <= 0) return null;
+  const remaining = Math.max(0, Number(planGE) - Number(ge || 0));
+  if (remaining === 0) return { done: true };
+
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth();
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  let weekdays = 0, weekendDays = 0;
+  for (let d = today.getDate(); d <= lastDay; d++) {
+    const dow = new Date(y, m, d).getDay();
+    (dow === 0 || dow === 6) ? weekendDays++ : weekdays++;
+  }
+  const totalDays = weekdays + weekendDays;
+  if (totalDays === 0) return { done: false, x: remaining, y: remaining };
+
+  const avg = remaining / totalDays;
+  return { done: false, x: Math.floor(avg), y: Math.ceil(avg) };
+}
+
 /* ── PARSE SHEETS ────────────────────────────────────────── */
 function normCol(s) {
   return String(s||'').trim().toUpperCase()
@@ -451,11 +486,19 @@ function renderCards(stores, kpiMap, dataOk) {
       <div class="kpi-sub">${convStr ?? dash()}</div>
     </div>`;
 
+    const rate = calcGeRate(kpi.ge, kpi.planGE);
+    const rateHtml = !rate ? ''
+      : rate.done ? `<span class="ge-rate done">✓</span>`
+      : `<span class="ge-rate">${rate.x}<span class="ge-sep">|</span>${rate.y}</span>`;
+
     return `<div class="card ${cls}">
       <div class="card-top">
         <div class="order-num">${i+1}</div>
         <div class="card-info">
-          <div class="store-name">${icon} ${s.Club.trim()}</div>
+          <div class="store-name-row">
+            <div class="store-name">${icon} ${s.Club.trim()}</div>
+            ${rateHtml}
+          </div>
           <div class="meta">
             <span class="tag tag-format">${s.Formato}</span>
             <span class="tag tag-det">DET ${s.DET}</span>
