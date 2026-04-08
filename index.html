@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitas del Día</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+    padding: 28px 24px 22px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,120,212,0.4);
+  }
+  .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 0.85rem; opacity: 0.85; }
+  .date-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-top: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .summary {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+  }
+  .summary .count {
+    background: #0078d4;
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .summary .label { opacity: 0.75; }
+
+  .cards {
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #0078d4; }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px 12px;
+    border-left: 4px solid;
+  }
+  .supercenter .card-top { border-color: #0078d4; }
+  .bodega      .card-top { border-color: #f0883e; }
+  .sams        .card-top { border-color: #3fb950; }
+
+  .order-num {
+    min-width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+  }
+  .supercenter .order-num { background: rgba(0,120,212,0.2); color: #58a6ff; border: 1.5px solid #0078d4; }
+  .bodega      .order-num { background: rgba(240,136,62,0.2); color: #f0883e; border: 1.5px solid #f0883e; }
+  .sams        .order-num { background: rgba(63,185,80,0.2);  color: #3fb950; border: 1.5px solid #3fb950; }
+
+  .card-info { flex: 1; min-width: 0; }
+  .store-name {
+    font-size: 1.05rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 5px;
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; }
+  .tag { border-radius: 6px; padding: 2px 9px; font-weight: 500; white-space: nowrap; }
+  .tag-format { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+  .tag-det    { background: #21262d; color: #8b949e; border: 1px solid #30363d; font-family: monospace; }
+  .tag-seg    { border: 1px solid; }
+  .seg-bottom-low  { background: rgba(88,166,255,0.1);  color: #58a6ff; border-color: rgba(88,166,255,0.3); }
+  .seg-bottom-high { background: rgba(240,136,62,0.1);  color: #f0883e; border-color: rgba(240,136,62,0.3); }
+  .seg-cero        { background: rgba(248,81,73,0.12);  color: #f85149; border-color: rgba(248,81,73,0.3); }
+  .seg-medium      { background: rgba(63,185,80,0.1);   color: #3fb950; border-color: rgba(63,185,80,0.3); }
+  .seg-top         { background: rgba(210,153,34,0.12); color: #d29922; border-color: rgba(210,153,34,0.3); }
+  .seg-other       { background: #21262d; color: #8b949e; border-color: #30363d; }
+  .territorial { font-size: 0.78rem; color: #6e7681; margin-top: 4px; }
+
+  /* KPI ROW */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid #21262d;
+  }
+  .kpi {
+    padding: 10px 10px;
+    border-right: 1px solid #21262d;
+    text-align: center;
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi-label {
+    font-size: 0.63rem;
+    color: #6e7681;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+  }
+  .kpi-main {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e6edf3;
+    white-space: nowrap;
+  }
+  .kpi-sub {
+    font-size: 0.75rem;
+    color: #8b949e;
+    margin-top: 3px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .kpi-sub.pos { color: #3fb950; }
+  .kpi-sub.neg { color: #f85149; }
+  .kpi-dash { color: #484f58; }
+
+  /* STATUS SCREENS */
+  .status-box {
+    text-align: center;
+    padding: 60px 24px;
+    color: #8b949e;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .status-box .icon { font-size: 3rem; margin-bottom: 14px; }
+  .status-box h2 { font-size: 1.1rem; margin-bottom: 8px; color: #c9d1d9; }
+  .status-box p  { font-size: 0.88rem; line-height: 1.6; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #30363d;
+    border-top-color: #0078d4;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .data-note {
+    text-align: center;
+    font-size: 0.72rem;
+    color: #484f58;
+    padding: 8px 16px 0;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .data-note.err { color: #f85149; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Visitas del Día</h1>
+  <div class="subtitle">Ramón Rivas · Monterrey</div>
+  <div class="date-badge" id="date-badge">—</div>
+</div>
+
+<div class="summary" id="summary-bar" style="display:none;">
+  <span class="count" id="total-count">0</span>
+  <span class="label">tiendas programadas hoy</span>
+</div>
+
+<div id="main-content">
+  <div class="status-box">
+    <div class="spinner"></div>
+    <h2>Cargando datos...</h2>
+    <p>Descargando el archivo de ventas desde Google Drive.</p>
+  </div>
+</div>
+
+<script>
+/* ── CONFIG ───────────────────────────────────────────────── */
+const FILE_ID = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
+
+const XLSX_URLS = [
+  `https://docs.google.com/spreadsheets/d/${FILE_ID}/export?format=xlsx`,
+];
+
+// Pestañas del archivo de ventas → Formato de tienda
+const SHEET_TO_FORMAT = {
+  'BA':  'Bodega Aurrera',
+  'WM':  'Supercenter',
+  'SMC': "Sam´s"
+};
+
+const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+/* ── RUTAS (datos hardcoded del xlsx de planificación) ───── */
+const VISITAS = {"2026-04-01":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4823","Club":"Reforma Huinala","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3623","Club":"Los Fresnos","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"5081","Club":"Calzada Del Sol","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3051","Club":"Plaza Centrika","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6320","Club":"Camino a Huinalá","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1234","Club":"Apodaca Sur","Segmentacion":"Cero Productividad"}],"2026-04-06":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1833","Club":"La Pastora","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4991","Club":"La Pastora","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1900","Club":"Dos Ríos","Segmentacion":"Bottom low"}],"2026-04-07":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2676","Club":"La Fe","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3713","Club":"Ruiz Cortines","Segmentacion":"Medium"}],"2026-04-08":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1105","Club":"Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4138","Club":"Sc Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5802","Club":"Paseo Juarez","Segmentacion":"Medium"}],"2026-04-09":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1622","Club":"Gomez Morin","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4978","Club":"Gomez Morín","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2044","Club":"Valle Oriente","Segmentacion":"Bottom low"}],"2026-04-10":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6293","Club":"Santa Catarina","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3443","Club":"Clouthier","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1139","Club":"La Huasteca","Segmentacion":"Bottom low"}],"2026-04-13":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6392","Club":"Gonzalitos","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3720","Club":"Lincoln","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3239","Club":"Paseo Real","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3114","Club":"Cumbres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6229","Club":"Cumbres","Segmentacion":"Medium"}],"2026-04-14":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2034","Club":"Las Torres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6275","Club":"Las Torres","Segmentacion":"Bottom high"}],"2026-04-15":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1027","Club":"Sendero","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2645","Club":"Escobedo Norte","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1927","Club":"Puerta del Sol","Segmentacion":"Cero Productividad"}],"2026-04-16":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3623","Club":"Los Fresnos","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3801","Club":"Santo Domingo","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6204","Club":"San Nicolás","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2179","Club":"San Nicolas","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5055","Club":"Concordia","Segmentacion":"Bottom low"}],"2026-04-17":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"5081","Club":"Calzada Del Sol","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4809","Club":"Apodaca Norte","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"889","Club":"Cuspide","Segmentacion":"Bottom low"}],"2026-04-19":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3051","Club":"Plaza Centrika","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3625","Club":"Diaz Berlanga","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5801","Club":"Lopez Mateos Fundidores","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1867","Club":"Félix Galván","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2076","Club":"Miguel Aleman","Segmentacion":"Bottom high"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6468","Club":"Miguel Alemán","Segmentacion":"Medium"}],"2026-04-20":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4823","Club":"Reforma Huinala","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1833","Club":"La Pastora","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4991","Club":"La Pastora","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1900","Club":"Dos Ríos","Segmentacion":"Bottom low"}],"2026-04-21":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1622","Club":"Gomez Morin","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4978","Club":"Gomez Morín","Segmentacion":"Bottom high"}],"2026-04-22":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1105","Club":"Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5802","Club":"Paseo Juarez","Segmentacion":"Medium"}],"2026-04-23":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6293","Club":"Santa Catarina","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3443","Club":"Clouthier","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1139","Club":"La Huasteca","Segmentacion":"Bottom low"}],"2026-04-24":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6392","Club":"Gonzalitos","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3720","Club":"Lincoln","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3239","Club":"Paseo Real","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3114","Club":"Cumbres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6229","Club":"Cumbres","Segmentacion":"Medium"}],"2026-04-27":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1027","Club":"Sendero","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2645","Club":"Escobedo Norte","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1927","Club":"Puerta del Sol","Segmentacion":"Cero Productividad"}],"2026-04-28":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2044","Club":"Valle Oriente","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2034","Club":"Las Torres","Segmentacion":"Bottom low"}],"2026-04-29":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1234","Club":"Apodaca Sur","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3801","Club":"Santo Domingo","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6204","Club":"San Nicolás","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2179","Club":"San Nicolas","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5055","Club":"Concordia","Segmentacion":"Bottom low"}],"2026-04-30":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3625","Club":"Diaz Berlanga","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5801","Club":"Lopez Mateos Fundidores","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1867","Club":"Félix Galván","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2076","Club":"Miguel Aleman","Segmentacion":"Bottom high"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6468","Club":"Miguel Alemán","Segmentacion":"Medium"}]};
+
+/* ── HELPERS ─────────────────────────────────────────────── */
+function getTodayKey() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function formatDateNice(k) {
+  const [y,m,d] = k.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return `${DIAS_ES[dt.getDay()]}, ${d} de ${MESES_ES[m-1]} ${y}`;
+}
+function getFormatClass(f) {
+  f = (f||'').toLowerCase();
+  if (f.includes('super')) return 'supercenter';
+  if (f.includes('bodega')) return 'bodega';
+  return 'sams';
+}
+function getFormatIcon(f) {
+  f = (f||'').toLowerCase();
+  if (f.includes('super')) return '🛒';
+  if (f.includes('bodega')) return '🏪';
+  return '🏢';
+}
+function getSegClass(s) {
+  s = (s||'').toLowerCase();
+  if (s.includes('bottom low'))  return 'seg-bottom-low';
+  if (s.includes('bottom high')) return 'seg-bottom-high';
+  if (s.includes('cero'))        return 'seg-cero';
+  if (s.includes('medium'))      return 'seg-medium';
+  if (s.includes('top'))         return 'seg-top';
+  return 'seg-other';
+}
+
+/* ── FORMATTERS ──────────────────────────────────────────── */
+function isNullish(v) { return v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v)); }
+
+// Moneda: detecta si viene en millones (< 1000 aprox) o en pesos directos (>= 1000)
+function fmtPeso(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) {
+    return '$' + (n/1_000_000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) + 'M';
+  }
+  if (abs >= 1_000) {
+    return '$' + (n/1_000).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + 'K';
+  }
+  return '$' + n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+
+// Entero con separador de miles
+function fmtInt(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  return Math.round(n).toLocaleString('es-MX');
+}
+
+// Porcentaje: si viene entre -1.5 y 1.5 asume decimal (0.85 → 85%), si no lo toma directo
+function fmtPct(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  const pct = Math.abs(n) <= 1.5 ? n * 100 : n;
+  return pct.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+}
+
+// vs AA con signo + / -
+function fmtVsAA(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  const pct = Math.abs(n) <= 1.5 ? n * 100 : n;
+  return (pct >= 0 ? '+' : '') + pct.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+}
+
+function vsAAClass(v) {
+  if (isNullish(v)) return '';
+  const n = Number(v);
+  if (isNaN(n)) return '';
+  return n >= 0 ? 'pos' : 'neg';
+}
+
+/* ── PARSE SHEETS ────────────────────────────────────────── */
+function normCol(s) {
+  return String(s||'').trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita acentos
+    .replace(/\s+/g,' ');
+}
+
+function parseSheets(wb) {
+  const kpiMap = {};
+  console.log('Pestañas en el archivo:', wb.SheetNames);
+
+  for (const [sheetKey] of Object.entries(SHEET_TO_FORMAT)) {
+    // Buscar la pestaña con nombre exacto o case-insensitive
+    const realName = wb.SheetNames.find(n => n.trim().toUpperCase() === sheetKey.toUpperCase())
+                  || wb.SheetNames.find(n => n.trim().toUpperCase().includes(sheetKey.toUpperCase()));
+    if (!realName) { console.warn('Pestaña no encontrada:', sheetKey, '— disponibles:', wb.SheetNames); continue; }
+
+    const ws   = wb.Sheets[realName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
+    if (!rows.length) { console.warn('Pestaña vacía:', realName); continue; }
+
+    // Volcar columnas detectadas para debug
+    const rawCols = Object.keys(rows[0]);
+    console.log(`[${realName}] columnas raw:`, rawCols);
+
+    // Mapear columna normalizada → nombre real
+    const colMap = {};
+    for (const k of rawCols) colMap[normCol(k)] = k;
+    console.log(`[${realName}] columnas normalizadas:`, Object.keys(colMap));
+
+    const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
+
+    const cDET   = col('DET');
+    const cVENTA = col('VENTA','VENTAS','VENTA MES');
+    const cELEG  = col('ELEGIBLES','ELEGIBLE','ELEG');
+    const cPLAN  = col('PLAN GE','PLAN_GE','PLANGE','PLAN');
+    const cGE    = col('GE');
+    const cCONV  = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN','CONV.');
+    const cVSAA  = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %');
+
+    console.log(`[${realName}] mapeo → DET:${cDET} VENTA:${cVENTA} ELEG:${cELEG} PLAN:${cPLAN} GE:${cGE} CONV:${cCONV} VSAA:${cVSAA}`);
+
+    for (const row of rows) {
+      const det = row[cDET];
+      if (isNullish(det)) continue;
+      const key = String(det).trim();
+      if (!key || key === 'DET') continue; // saltar fila de encabezado si sheet_to_json la incluye
+      kpiMap[key] = {
+        venta:     row[cVENTA]  ?? null,
+        vsAA:      row[cVSAA]   ?? null,
+        ge:        row[cGE]     ?? null,
+        planGE:    row[cPLAN]   ?? null,
+        elegibles: row[cELEG]   ?? null,
+        conv:      row[cCONV]   ?? null,
+      };
+    }
+  }
+  console.log('KPI map — total registros:', Object.keys(kpiMap).length, '| muestra:', Object.entries(kpiMap).slice(0,2));
+  return kpiMap;
+}
+
+/* ── RENDER CARDS ────────────────────────────────────────── */
+function dash() { return '<span class="kpi-dash">—</span>'; }
+
+function renderCards(stores, kpiMap, dataOk) {
+  const summaryBar = document.getElementById('summary-bar');
+  const totalCount = document.getElementById('total-count');
+  const content    = document.getElementById('main-content');
+
+  if (!stores || !stores.length) {
+    summaryBar.style.display = 'none';
+    content.innerHTML = `
+      <div class="status-box">
+        <div class="icon">📅</div>
+        <h2>Sin visitas programadas hoy</h2>
+        <p>No hay tiendas asignadas para esta fecha.<br>Consulta el archivo de rutas.</p>
+      </div>`;
+    return;
+  }
+
+  summaryBar.style.display = 'flex';
+  totalCount.textContent   = stores.length;
+
+  const cards = stores.map((s, i) => {
+    const cls    = getFormatClass(s.Formato);
+    const icon   = getFormatIcon(s.Formato);
+    const segCls = getSegClass(s.Segmentacion);
+    const kpi    = kpiMap[String(s.DET).trim()] || {};
+
+    const ventaStr = fmtPeso(kpi.venta);
+    const vsAAStr  = fmtVsAA(kpi.vsAA);
+    const vsAACls  = vsAAClass(kpi.vsAA);
+    const geStr    = fmtInt(kpi.ge);
+    const planStr  = fmtInt(kpi.planGE);
+    const elegStr  = fmtInt(kpi.elegibles);
+    const convStr  = fmtPct(kpi.conv);
+
+    // KPI 1: Venta / vs AA
+    const kpi1 = `<div class="kpi">
+      <div class="kpi-label">Venta / vs AA</div>
+      <div class="kpi-main">${ventaStr ?? dash()}</div>
+      <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
+    </div>`;
+
+    // KPI 2: GE / Plan GE  (ambos en línea principal como "GE / Plan")
+    const geVal   = geStr   ?? dash();
+    const planVal = planStr ?? dash();
+    const kpi2 = `<div class="kpi">
+      <div class="kpi-label">GE / Plan GE</div>
+      <div class="kpi-main">${geVal}</div>
+      <div class="kpi-sub">${planVal}</div>
+    </div>`;
+
+    // KPI 3: Elegibles / Conv%
+    const kpi3 = `<div class="kpi">
+      <div class="kpi-label">Elegibles / Conv%</div>
+      <div class="kpi-main">${elegStr ?? dash()}</div>
+      <div class="kpi-sub">${convStr ?? dash()}</div>
+    </div>`;
+
+    return `<div class="card ${cls}">
+      <div class="card-top">
+        <div class="order-num">${i+1}</div>
+        <div class="card-info">
+          <div class="store-name">${icon} ${s.Club.trim()}</div>
+          <div class="meta">
+            <span class="tag tag-format">${s.Formato}</span>
+            <span class="tag tag-det">DET ${s.DET}</span>
+            <span class="tag tag-seg ${segCls}">${s.Segmentacion}</span>
+          </div>
+          <div class="territorial">👤 ${s.Territorial}</div>
+        </div>
+      </div>
+      <div class="kpis">${kpi1}${kpi2}${kpi3}</div>
+    </div>`;
+  }).join('');
+
+  const noteClass = dataOk ? '' : 'err';
+  const noteText  = dataOk
+    ? '📊 Datos de ventas cargados desde Google Drive'
+    : '⚠️ No se cargaron datos de ventas. Necesitas conexión a internet para cargar el archivo desde Google Drive.';
+
+  content.innerHTML = `<div class="cards">${cards}</div>
+    <p class="data-note ${noteClass}">${noteText}</p>`;
+}
+
+/* ── MAIN ────────────────────────────────────────────────── */
+async function fetchXlsx() {
+  for (const url of XLSX_URLS) {
+    try {
+      console.log('Intentando URL:', url);
+      const resp = await fetch(url);
+      if (!resp.ok) { console.warn(`URL falló (${resp.status}):`, url); continue; }
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength < 1000) { console.warn('Respuesta demasiado pequeña, probando siguiente URL'); continue; }
+      console.log('Descarga OK — bytes:', buf.byteLength, '— URL:', url);
+      return buf;
+    } catch (e) {
+      console.warn('Error en URL:', url, e.message);
+    }
+  }
+  throw new Error('Ninguna URL funcionó');
+}
+
+async function init() {
+  const key = getTodayKey();
+  document.getElementById('date-badge').textContent = formatDateNice(key);
+  const stores = VISITAS[key] || [];
+
+  try {
+    const buf    = await fetchXlsx();
+    const wb     = XLSX.read(buf, { type: 'array', cellDates: false });
+    const kpiMap = parseSheets(wb);
+    renderCards(stores, kpiMap, true);
+  } catch (err) {
+    console.error('Error cargando xlsx:', err);
+    renderCards(stores, {}, false);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
