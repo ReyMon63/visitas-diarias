@@ -34,6 +34,25 @@
     font-size: 1rem;
     font-weight: 600;
   }
+  .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    margin-left: 10px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .refresh-btn:active { background: rgba(255,255,255,0.3); }
+  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
 
   .summary {
     background: #161b22;
@@ -186,6 +205,13 @@
   <h1>📋 Visitas del Día</h1>
   <div class="subtitle">Ramón Rivas · Monterrey</div>
   <div class="date-badge" id="date-badge">—</div>
+  <button class="refresh-btn" id="refresh-btn" onclick="forceRefresh()">
+    <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+    Actualizar
+  </button>
 </div>
 
 <div class="summary" id="summary-bar" style="display:none;">
@@ -203,7 +229,11 @@
 
 <script>
 /* ── CONFIG ───────────────────────────────────────────────── */
-const XLSX_URL = 'https://drive.google.com/uc?export=download&id=1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
+const FILE_ID = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
+
+const XLSX_URLS = [
+  `https://docs.google.com/spreadsheets/d/${FILE_ID}/export?format=xlsx`,
+];
 
 // Pestañas del archivo de ventas → Formato de tienda
 const SHEET_TO_FORMAT = {
@@ -302,37 +332,52 @@ function vsAAClass(v) {
 }
 
 /* ── PARSE SHEETS ────────────────────────────────────────── */
-function normCol(s) { return String(s||'').trim().toUpperCase().replace(/\s+/g,' '); }
+function normCol(s) {
+  return String(s||'').trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita acentos
+    .replace(/\s+/g,' ');
+}
 
 function parseSheets(wb) {
   const kpiMap = {};
+  console.log('Pestañas en el archivo:', wb.SheetNames);
+
   for (const [sheetKey] of Object.entries(SHEET_TO_FORMAT)) {
-    const ws = wb.Sheets[sheetKey];
-    if (!ws) { console.warn('Pestaña no encontrada:', sheetKey); continue; }
+    // Buscar la pestaña con nombre exacto o case-insensitive
+    const realName = wb.SheetNames.find(n => n.trim().toUpperCase() === sheetKey.toUpperCase())
+                  || wb.SheetNames.find(n => n.trim().toUpperCase().includes(sheetKey.toUpperCase()));
+    if (!realName) { console.warn('Pestaña no encontrada:', sheetKey, '— disponibles:', wb.SheetNames); continue; }
 
+    const ws   = wb.Sheets[realName];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
-    if (!rows.length) continue;
+    if (!rows.length) { console.warn('Pestaña vacía:', realName); continue; }
 
-    // Mapear nombres de columna normalizados → nombre real
+    // Volcar columnas detectadas para debug
+    const rawCols = Object.keys(rows[0]);
+    console.log(`[${realName}] columnas raw:`, rawCols);
+
+    // Mapear columna normalizada → nombre real
     const colMap = {};
-    for (const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
+    for (const k of rawCols) colMap[normCol(k)] = k;
+    console.log(`[${realName}] columnas normalizadas:`, Object.keys(colMap));
 
-    // Resolver columnas con posibles variantes de nombre
-    const col = (aliases) => aliases.map(a => colMap[normCol(a)]).find(Boolean);
+    const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
 
-    const cDET   = col(['DET']);
-    const cVENTA = col(['VENTA','VENTAS']);
-    const cELEG  = col(['ELEGIBLES','ELEG','ELEGIBLE']);
-    const cPLAN  = col(['PLAN GE','PLAN_GE','PLANGE','PLAN']);
-    const cGE    = col(['GE']);
-    const cCONV  = col(['CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN']);
-    const cVSAA  = col(['VS AA','VS_AA','VSAA','VS AA%','VS. AA','VS.AA']);
+    const cDET   = col('DET');
+    const cVENTA = col('VENTA','VENTAS','VENTA MES');
+    const cELEG  = col('ELEGIBLES','ELEGIBLE','ELEG');
+    const cPLAN  = col('PLAN GE','PLAN_GE','PLANGE','PLAN');
+    const cGE    = col('GE');
+    const cCONV  = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN','CONV.');
+    const cVSAA  = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %');
+
+    console.log(`[${realName}] mapeo → DET:${cDET} VENTA:${cVENTA} ELEG:${cELEG} PLAN:${cPLAN} GE:${cGE} CONV:${cCONV} VSAA:${cVSAA}`);
 
     for (const row of rows) {
       const det = row[cDET];
       if (isNullish(det)) continue;
       const key = String(det).trim();
-      if (!key) continue;
+      if (!key || key === 'DET') continue; // saltar fila de encabezado si sheet_to_json la incluye
       kpiMap[key] = {
         venta:     row[cVENTA]  ?? null,
         vsAA:      row[cVSAA]   ?? null,
@@ -343,6 +388,7 @@ function parseSheets(wb) {
       };
     }
   }
+  console.log('KPI map — total registros:', Object.keys(kpiMap).length, '| muestra:', Object.entries(kpiMap).slice(0,2));
   return kpiMap;
 }
 
@@ -425,27 +471,39 @@ function renderCards(stores, kpiMap, dataOk) {
   const noteClass = dataOk ? '' : 'err';
   const noteText  = dataOk
     ? '📊 Datos de ventas cargados desde Google Drive'
-    : '⚠️ No se cargaron datos de ventas — verifica que el archivo en Drive sea público (acceso "Cualquiera con el enlace")';
+    : '⚠️ No se cargaron datos de ventas. Necesitas conexión a internet para cargar el archivo desde Google Drive.';
 
   content.innerHTML = `<div class="cards">${cards}</div>
     <p class="data-note ${noteClass}">${noteText}</p>`;
 }
 
 /* ── MAIN ────────────────────────────────────────────────── */
+async function fetchXlsx() {
+  for (const url of XLSX_URLS) {
+    try {
+      console.log('Intentando URL:', url);
+      const resp = await fetch(url + '&t=' + Date.now(), { cache: 'no-store' });
+      if (!resp.ok) { console.warn(`URL falló (${resp.status}):`, url); continue; }
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength < 1000) { console.warn('Respuesta demasiado pequeña, probando siguiente URL'); continue; }
+      console.log('Descarga OK — bytes:', buf.byteLength, '— URL:', url);
+      return buf;
+    } catch (e) {
+      console.warn('Error en URL:', url, e.message);
+    }
+  }
+  throw new Error('Ninguna URL funcionó');
+}
+
 async function init() {
   const key = getTodayKey();
   document.getElementById('date-badge').textContent = formatDateNice(key);
   const stores = VISITAS[key] || [];
 
   try {
-    const resp = await fetch(XLSX_URL);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const buf  = await resp.arrayBuffer();
-    const wb   = XLSX.read(buf, { type: 'array', cellDates: false });
-    console.log('Pestañas encontradas:', wb.SheetNames);
+    const buf    = await fetchXlsx();
+    const wb     = XLSX.read(buf, { type: 'array', cellDates: false });
     const kpiMap = parseSheets(wb);
-    console.log('Stores para hoy:', stores);
-    console.log('KPI map (todas las entradas):', kpiMap);
     renderCards(stores, kpiMap, true);
   } catch (err) {
     console.error('Error cargando xlsx:', err);
@@ -454,6 +512,14 @@ async function init() {
 }
 
 init();
+
+function forceRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  // Recargar limpiando caché del HTML
+  window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+}
 </script>
 </body>
 </html>
