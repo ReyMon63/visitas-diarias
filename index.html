@@ -354,12 +354,12 @@ function parseSheets(wb) {
 
     // Volcar columnas detectadas para debug
     const rawCols = Object.keys(rows[0]);
-    console.log(`[${realName}] columnas raw:`, rawCols);
+    console.log(`[${realName}] columnas raw: ` + rawCols.join(' | '));
 
     // Mapear columna normalizada → nombre real
     const colMap = {};
     for (const k of rawCols) colMap[normCol(k)] = k;
-    console.log(`[${realName}] columnas normalizadas:`, Object.keys(colMap));
+    console.log(`[${realName}] columnas normalizadas: ` + Object.keys(colMap).join(' | '));
 
     const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
 
