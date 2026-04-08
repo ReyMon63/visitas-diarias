@@ -363,13 +363,13 @@ function parseSheets(wb) {
 
     const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
 
-    const cDET   = col('DET');
-    const cVENTA = col('VENTA','VENTAS','VENTA MES');
-    const cELEG  = col('ELEGIBLES','ELEGIBLE','ELEG');
-    const cPLAN  = col('PLAN GE','PLAN_GE','PLANGE','PLAN');
-    const cGE    = col('GE');
-    const cCONV  = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN','CONV.');
-    const cVSAA  = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %');
+    const cDET   = col('DET','DTTE');
+    const cVENTA = col('VENTA','VENTAS','VENTA MES','VENTA ($)');
+    const cELEG  = col('ELEGIBLES','ELEGIBLE','ELEG','Elegibles');
+    const cPLAN  = col('PLAN GE','PLAN_GE','PLANGE','PLAN','Plan GE');
+    const cGE    = col('GE','Garantía Extendida','Garantia Extendida');
+    const cCONV  = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN','CONV.','% Conv','% CONV','Conversión');
+    const cVSAA  = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %','vs AA');
 
     console.log(`[${realName}] mapeo → DET:${cDET} VENTA:${cVENTA} ELEG:${cELEG} PLAN:${cPLAN} GE:${cGE} CONV:${cCONV} VSAA:${cVSAA}`);
 
