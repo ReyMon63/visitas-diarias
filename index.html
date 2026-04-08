@@ -352,11 +352,11 @@ function calcGeRate(ge, planGE) {
   if (remaining === 0) return { done: true };
 
   const today = new Date();
-  const y = today.getFullYear(), m = today.getMonth();
-  const lastDay = new Date(y, m + 1, 0).getDate();
+  const yr = today.getFullYear(), mo = today.getMonth();
+  const lastDay = new Date(yr, mo + 1, 0).getDate();
   let weekdays = 0, weekendDays = 0;
   for (let d = today.getDate(); d <= lastDay; d++) {
-    const dow = new Date(y, m, d).getDay();
+    const dow = new Date(yr, mo, d).getDay();
     (dow === 0 || dow === 6) ? weekendDays++ : weekdays++;
   }
   const totalDays = weekdays + weekendDays;
