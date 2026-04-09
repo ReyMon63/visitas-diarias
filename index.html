@@ -574,6 +574,9 @@ async function fetchXlsx() {
   throw new Error('Ninguna URL funcionó');
 }
 
+/* kpiMap global para búsqueda fuera de ruta */
+let globalKpiMap = {};
+
 async function init() {
   const key = getTodayKey();
   document.getElementById('date-badge').textContent = formatDateNice(key);
@@ -582,8 +585,8 @@ async function init() {
   try {
     const buf    = await fetchXlsx();
     const wb     = XLSX.read(buf, { type: 'array', cellDates: false });
-    const kpiMap = parseSheets(wb);
-    renderCards(stores, kpiMap, true);
+    globalKpiMap = parseSheets(wb);
+    renderCards(stores, globalKpiMap, true);
   } catch (err) {
     console.error('Error cargando xlsx:', err);
     renderCards(stores, {}, false);
@@ -592,11 +595,69 @@ async function init() {
 
 init();
 
+function buildSearchCard(det, kpi) {
+  const ventaStr = fmtPeso(kpi.venta);
+  const vsAAStr  = fmtVsAA(kpi.vsAA);
+  const vsAACls  = vsAAClass(kpi.vsAA);
+  const geStr    = fmtInt(kpi.ge);
+  const planStr  = fmtInt(kpi.planGE);
+  const elegStr  = fmtInt(kpi.elegibles);
+  const convStr  = fmtPct(kpi.conv);
+  const rate     = calcGeRate(kpi.ge, kpi.planGE);
+  const rateHtml = !rate ? ''
+    : rate.done ? `<span class="ge-rate done">✓</span>`
+    : `<span class="ge-rate">${rate.x}<span class="ge-sep">|</span>${rate.y}</span>`;
+
+  const kpi1 = `<div class="kpi"><div class="kpi-label">Venta / vs AA</div><div class="kpi-main">${ventaStr ?? dash()}</div><div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div></div>`;
+  const kpi2 = `<div class="kpi"><div class="kpi-label">GE / Plan GE</div><div class="kpi-main">${geStr ?? dash()}</div><div class="kpi-sub">${planStr ?? dash()}</div></div>`;
+  const kpi3 = `<div class="kpi"><div class="kpi-label">Elegibles / Conv%</div><div class="kpi-main">${elegStr ?? dash()}</div><div class="kpi-sub">${convStr ?? dash()}</div></div>`;
+
+  return `<div class="card sams" data-det="${det}" id="search-result-card">
+    <div class="card-top">
+      <div class="order-num">—</div>
+      <div class="card-info">
+        <div class="store-name-row">
+          <div class="store-name">🔍 DET ${det}</div>
+          ${rateHtml}
+        </div>
+        <div class="meta">
+          <span class="tag tag-det">Fuera de ruta hoy</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpis">${kpi1}${kpi2}${kpi3}</div>
+  </div>`;
+}
+
 function filterByDet(val) {
   const term = val.trim();
+
+  // Limpiar card de búsqueda previa fuera de ruta
+  const prev = document.getElementById('search-result-card');
+  if (prev) prev.remove();
+
+  if (!term) {
+    // Sin término: mostrar todas las cards de ruta
+    document.querySelectorAll('.card').forEach(c => c.style.display = '');
+    return;
+  }
+
+  // Filtrar cards de ruta
+  let found = false;
   document.querySelectorAll('.card').forEach(card => {
-    card.style.display = (!term || card.dataset.det.startsWith(term)) ? '' : 'none';
+    const match = card.dataset.det.startsWith(term);
+    card.style.display = match ? '' : 'none';
+    if (match) found = true;
   });
+
+  // Si no está en la ruta de hoy, buscar en el kpiMap del Excel
+  if (!found) {
+    const kpi = globalKpiMap[term];
+    const cardsEl = document.querySelector('.cards');
+    if (kpi && cardsEl) {
+      cardsEl.insertAdjacentHTML('afterbegin', buildSearchCard(term, kpi));
+    }
+  }
 }
 
 function forceRefresh() {
