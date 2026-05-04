@@ -9,46 +9,152 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 0 0 48px; }
 
+  /* ── HEADER ── */
   .header {
     background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
-    padding: 28px 24px 22px; text-align: center;
+    padding: 20px 20px 18px;
     box-shadow: 0 4px 20px rgba(0,120,212,0.4);
   }
-  .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
-  .header .subtitle { font-size: 0.85rem; opacity: 0.85; }
-  .date-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 20px; padding: 6px 18px; margin-top: 14px;
-    font-size: 1rem; font-weight: 600;
-  }
+  .header-top { text-align: center; margin-bottom: 14px; }
+  .header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 3px; }
+  .header .subtitle { font-size: 0.82rem; opacity: 0.85; }
 
+  /* Barra fecha + refresh */
+  .header-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .date-btn {
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px; padding: 7px 16px;
+    font-size: 0.95rem; font-weight: 600; color: #fff;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; gap: 7px;
+    flex: 1; justify-content: center;
+  }
+  .date-btn:hover { background: rgba(255,255,255,0.28); }
+  .date-btn .cal-icon { font-size: 1rem; opacity: 0.85; }
+
+  .refresh-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50%; width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.1rem; transition: background 0.2s, transform 0.3s;
+    flex-shrink: 0; color: #fff;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,0.28); }
+  .refresh-btn.spinning { animation: spin 0.7s linear infinite; }
+
+  /* ── CALENDAR POPUP ── */
+  .cal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .cal-overlay.open { display: flex; }
+  .cal-popup {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    padding: 20px; width: 320px; max-width: 92vw;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-header h3 { font-size: 1rem; font-weight: 600; }
+  .cal-nav { background: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 1rem; color: #e6edf3; }
+  .cal-nav:hover { background: #30363d; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+  .cal-dow { text-align: center; font-size: 0.68rem; color: #6e7681; text-transform: uppercase; padding-bottom: 6px; font-weight: 600; }
+  .cal-day {
+    text-align: center; padding: 7px 2px; border-radius: 8px;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .cal-day:hover { background: #21262d; }
+  .cal-day.today { border-color: #0078d4; color: #58a6ff; font-weight: 700; }
+  .cal-day.selected { background: #0078d4; color: #fff; font-weight: 700; }
+  .cal-day.has-visits { position: relative; }
+  .cal-day.has-visits::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:#3fb950; }
+  .cal-day.empty { cursor: default; }
+  .cal-close { margin-top: 14px; width: 100%; background: #21262d; border: 1px solid #30363d; color: #e6edf3; border-radius: 8px; padding: 9px; cursor: pointer; font-size: 0.88rem; }
+  .cal-close:hover { background: #30363d; }
+
+  /* ── SUMMARY BAR ── */
   .summary {
     background: #161b22; border-bottom: 1px solid #30363d;
-    padding: 12px 24px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
+    padding: 10px 16px 10px 20px;
+    display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
   }
-  .summary .count { background: #0078d4; border-radius: 12px; padding: 3px 12px; font-weight: 700; font-size: 1rem; }
-  .summary .label { opacity: 0.75; }
+  .summary .count { background: #0078d4; border-radius: 12px; padding: 3px 12px; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+  .summary .label { opacity: 0.75; flex: 1; }
 
-  .cards { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 700px; margin: 0 auto; }
+  /* Search box */
+  .search-wrap { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .search-box {
+    background: #21262d; border: 1px solid #30363d; border-radius: 20px;
+    padding: 5px 12px 5px 8px; display: flex; align-items: center; gap: 6px;
+    transition: border-color 0.2s; width: 36px; overflow: hidden;
+    transition: width 0.3s ease, border-color 0.2s;
+  }
+  .search-box.expanded { width: 150px; border-color: #0078d4; }
+  .search-box .search-icon { font-size: 0.9rem; flex-shrink: 0; cursor: pointer; }
+  .search-input {
+    background: none; border: none; outline: none; color: #e6edf3;
+    font-size: 0.8rem; width: 0; transition: width 0.3s;
+  }
+  .search-box.expanded .search-input { width: 100px; }
+  .search-clear { cursor: pointer; color: #6e7681; font-size: 0.75rem; display: none; }
+  .search-box.expanded .search-clear { display: block; }
 
+  /* ── SEARCH RESULT MODAL ── */
+  .search-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: flex-start; justify-content: center;
+    padding-top: 80px;
+  }
+  .search-overlay.open { display: flex; }
+  .search-popup {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    width: 360px; max-width: 94vw; max-height: 70vh; overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .search-popup-header {
+    padding: 16px 18px 12px; border-bottom: 1px solid #21262d;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: #161b22; z-index: 1;
+  }
+  .search-popup-header h3 { font-size: 0.95rem; font-weight: 600; }
+  .search-popup-close { cursor: pointer; color: #6e7681; font-size: 1.2rem; }
+  .search-popup-body { padding: 14px 18px 18px; }
+  .search-field-wrap { display: flex; gap: 8px; margin-bottom: 14px; }
+  .search-full-input {
+    flex: 1; background: #21262d; border: 1px solid #30363d; border-radius: 8px;
+    padding: 9px 12px; color: #e6edf3; font-size: 0.9rem; outline: none;
+  }
+  .search-full-input:focus { border-color: #0078d4; }
+  .search-go-btn {
+    background: #0078d4; border: none; border-radius: 8px; padding: 9px 16px;
+    color: #fff; font-weight: 600; font-size: 0.88rem; cursor: pointer;
+  }
+  .search-go-btn:hover { background: #0090f1; }
+  .search-result-card { /* reuse card styles */ }
+  .no-result { text-align: center; padding: 24px 0; color: #6e7681; font-size: 0.88rem; }
+
+  /* ── CARDS ── */
+  .cards { padding: 16px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 700px; margin: 0 auto; }
   .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
   .card:hover { border-color: #0078d4; }
-
-  .card-top { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px 12px; border-left: 4px solid; }
+  .card-top { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px 11px; border-left: 4px solid; }
   .supercenter .card-top { border-color: #0078d4; }
   .bodega      .card-top { border-color: #f0883e; }
   .sams        .card-top { border-color: #3fb950; }
-
   .order-num { min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
   .supercenter .order-num { background: rgba(0,120,212,0.2); color: #58a6ff; border: 1.5px solid #0078d4; }
   .bodega      .order-num { background: rgba(240,136,62,0.2); color: #f0883e; border: 1.5px solid #f0883e; }
   .sams        .order-num { background: rgba(63,185,80,0.2);  color: #3fb950; border: 1.5px solid #3fb950; }
-
   .card-info { flex: 1; min-width: 0; }
-  .store-name { font-size: 1.05rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
-  .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; }
-  .tag { border-radius: 6px; padding: 2px 9px; font-weight: 500; white-space: nowrap; }
+  .store-name { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 5px; font-size: 0.75rem; }
+  .tag { border-radius: 6px; padding: 2px 8px; font-weight: 500; white-space: nowrap; }
   .tag-format { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
   .tag-det    { background: #21262d; color: #8b949e; border: 1px solid #30363d; font-family: monospace; }
   .tag-seg    { border: 1px solid; }
@@ -58,26 +164,24 @@
   .seg-medium      { background: rgba(63,185,80,0.1);   color: #3fb950; border-color: rgba(63,185,80,0.3); }
   .seg-top         { background: rgba(210,153,34,0.12); color: #d29922; border-color: rgba(210,153,34,0.3); }
   .seg-other       { background: #21262d; color: #8b949e; border-color: #30363d; }
-  .territorial { font-size: 0.78rem; color: #6e7681; margin-top: 4px; }
-
-  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #21262d; }
-  .kpi { padding: 10px 8px; border-right: 1px solid #21262d; text-align: center; }
+  .territorial { font-size: 0.75rem; color: #6e7681; margin-top: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid #21262d; }
+  .kpi { padding: 9px 6px; border-right: 1px solid #21262d; text-align: center; }
   .kpi:last-child { border-right: none; }
-  .kpi-label { font-size: 0.63rem; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; white-space: nowrap; }
-  .kpi-main  { font-size: 0.95rem; font-weight: 700; color: #e6edf3; white-space: nowrap; }
-  .kpi-sub   { font-size: 0.75rem; color: #8b949e; margin-top: 3px; white-space: nowrap; font-weight: 500; }
+  .kpi-label { font-size: 0.6rem; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; white-space: nowrap; }
+  .kpi-main  { font-size: 0.92rem; font-weight: 700; color: #e6edf3; white-space: nowrap; }
+  .kpi-sub   { font-size: 0.72rem; color: #8b949e; margin-top: 2px; white-space: nowrap; font-weight: 500; }
   .kpi-sub.pos { color: #3fb950; }
   .kpi-sub.neg { color: #f85149; }
   .dash { color: #484f58; }
 
+  /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
   .status-box .icon { font-size: 3rem; margin-bottom: 14px; }
   .status-box h2 { font-size: 1.1rem; margin-bottom: 8px; color: #c9d1d9; }
   .status-box p  { font-size: 0.88rem; line-height: 1.6; }
-
   .spinner { width: 40px; height: 40px; border: 3px solid #30363d; border-top-color: #0078d4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   .load-steps { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
   .step { font-size: 0.82rem; display: flex; align-items: center; gap: 8px; }
   .step-icon { width: 18px; text-align: center; }
@@ -85,246 +189,233 @@
   .step.active .step-icon::before { content: '⏳'; }
   .step.wait   .step-icon::before { content: '⬜'; }
   .step.err    .step-icon::before { content: '❌'; }
-
   .data-note { text-align: center; font-size: 0.72rem; color: #484f58; padding: 10px 16px 0; max-width: 700px; margin: 0 auto; }
   .data-note.err { color: #f85149; }
+
+  /* ── VIEWING OTHER DATE BANNER ── */
+  .viewing-banner {
+    display: none; background: #21262d; border-bottom: 1px solid #30363d;
+    padding: 8px 20px; font-size: 0.8rem; color: #d29922;
+    text-align: center;
+  }
+  .viewing-banner.show { display: block; }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <h1>📋 Visitas del Día</h1>
-  <div class="subtitle">Ramón Rivas · Monterrey</div>
-  <div class="date-badge" id="date-badge">—</div>
+  <div class="header-top">
+    <h1>📋 Visitas del Día</h1>
+    <div class="subtitle">Ramón Rivas · Monterrey</div>
+  </div>
+  <div class="header-bar">
+    <button class="date-btn" id="date-btn" onclick="openCal()">
+      <span class="cal-icon">📅</span>
+      <span id="date-label">—</span>
+    </button>
+    <button class="refresh-btn" id="refresh-btn" title="Actualizar datos" onclick="doRefresh()">🔄</button>
+  </div>
 </div>
 
+<!-- VIEWING OTHER DATE BANNER -->
+<div class="viewing-banner" id="viewing-banner"></div>
+
+<!-- SUMMARY BAR -->
 <div class="summary" id="summary-bar" style="display:none;">
   <span class="count" id="total-count">0</span>
-  <span class="label">tiendas programadas hoy</span>
+  <span class="label" id="summary-label">tiendas programadas hoy</span>
+  <div class="search-wrap">
+    <div class="search-box" id="search-box">
+      <span class="search-icon" onclick="toggleSearch()">🔍</span>
+      <input class="search-input" id="search-input" placeholder="Buscar..." onkeydown="if(event.key==='Enter')doSearch()" />
+      <span class="search-clear" onclick="clearSearch()">✕</span>
+    </div>
+  </div>
 </div>
 
+<!-- MAIN CONTENT -->
 <div id="main-content">
   <div class="status-box">
     <div class="spinner"></div>
     <h2>Cargando datos...</h2>
     <div class="load-steps">
       <div class="step active" id="step-rutas"><span class="step-icon"></span>Descargando rutas del mes</div>
-      <div class="step wait"   id="step-kpis" ><span class="step-icon"></span>Descargando datos de ventas</div>
+      <div class="step wait"   id="step-kpis"><span class="step-icon"></span>Descargando datos de ventas</div>
       <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
     </div>
   </div>
 </div>
 
-<script>
-/* ════════════════════════════════════════════════════
-   CONFIG — solo cambia los IDs si mueves los archivos
-   ════════════════════════════════════════════════════ */
-const ID_RUTAS = '1bevJZBCYV8VEufpVaUU0fBRW-xgEBh_h'; // Resumen_Visitas.xlsx
-const ID_KPIS  = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY'; // KPIs (BA / WM / SMC)
+<!-- CALENDAR POPUP -->
+<div class="cal-overlay" id="cal-overlay" onclick="if(event.target===this)closeCal()">
+  <div class="cal-popup">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calNav(-1)">‹</button>
+      <h3 id="cal-month-label">—</h3>
+      <button class="cal-nav" onclick="calNav(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <button class="cal-close" onclick="closeCal()">Cancelar</button>
+  </div>
+</div>
 
+<!-- SEARCH RESULT POPUP -->
+<div class="search-overlay" id="search-overlay" onclick="if(event.target===this)closeSearch()">
+  <div class="search-popup">
+    <div class="search-popup-header">
+      <h3>🔍 Buscar tienda</h3>
+      <span class="search-popup-close" onclick="closeSearch()">✕</span>
+    </div>
+    <div class="search-popup-body">
+      <div class="search-field-wrap">
+        <input class="search-full-input" id="search-full-input" placeholder="Nombre o DET..." onkeydown="if(event.key==='Enter')execSearch()" autofocus />
+        <button class="search-go-btn" onclick="execSearch()">Buscar</button>
+      </div>
+      <div id="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════ */
+const ID_RUTAS = '1bevJZBCYV8VEufpVaUU0fBRW-xgEBh_h';
+const ID_KPIS  = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
 const URL_RUTAS = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
 const URL_KPIS  = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
-
-// Columnas de visita en el archivo de rutas (soporta hasta Visita 5)
 const VISIT_COLS = ['Visita 1','Visita 2','Visita 3','Visita 4','Visita 5'];
-
-// Pestañas del archivo de KPIs → Formato
-const SHEET_TO_FORMAT = { BA: 'Bodega Aurrera', WM: 'Supercenter', SMC: "Sam´s" };
-
+const SHEET_TO_FORMAT = { BA:'Bodega Aurrera', WM:'Supercenter', SMC:"Sam´s" };
 const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-/* ════════════ HELPERS ════════════ */
-function getTodayKey() {
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let allVisitas = {};   // { "YYYY-MM-DD": [{...}] }
+let allKpis    = {};   // { "DET": {...} }
+let activeKey  = '';   // fecha actualmente mostrada
+let calYear, calMonth; // navegación del calendario
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function todayKey() {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
-function formatDateNice(k) {
+function keyToDate(k) { const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); }
+function dateToKey(dt) { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+
+function formatShort(k) {
   const [y,m,d] = k.split('-').map(Number);
-  const dt = new Date(y, m-1, d);
-  return `${DIAS_ES[dt.getDay()]}, ${d} de ${MESES_ES[m-1]} ${y}`;
-}
-function getFormatClass(f) {
-  f = (f||'').toLowerCase();
-  if (f.includes('super')) return 'supercenter';
-  if (f.includes('bodega')) return 'bodega';
-  return 'sams';
-}
-function getFormatIcon(f) {
-  f = (f||'').toLowerCase();
-  if (f.includes('super')) return '🛒';
-  if (f.includes('bodega')) return '🏪';
-  return '🏢';
-}
-function getSegClass(s) {
-  s = (s||'').toLowerCase();
-  if (s.includes('bottom low'))  return 'seg-bottom-low';
-  if (s.includes('bottom high')) return 'seg-bottom-high';
-  if (s.includes('cero'))        return 'seg-cero';
-  if (s.includes('medium'))      return 'seg-medium';
-  if (s.includes('top'))         return 'seg-top';
-  return 'seg-other';
-}
-function isNullish(v) { return v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v)); }
-function normCol(s) {
-  return String(s||'').trim().toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\s+/g,' ');
+  const dt = new Date(y,m-1,d);
+  return `${DIAS_ES[dt.getDay()]}, ${d} de ${MESES_ES[m-1]}`;
 }
 
-/* ════════════ FORMATTERS ════════════ */
+function isNullish(v) { return v===null||v===undefined||v===''||(typeof v==='number'&&isNaN(v)); }
+function normCol(s) { return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' '); }
+
+/* ══════════════════════════════════════════════
+   FORMATTERS
+══════════════════════════════════════════════ */
 function fmtPeso(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v); if (isNaN(n)) return null;
-  const a = Math.abs(n);
-  if (a >= 1_000_000) return '$' + (n/1_000_000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) + 'M';
-  if (a >= 1_000)     return '$' + (n/1_000).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + 'K';
-  return '$' + n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
+  const a=Math.abs(n);
+  if(a>=1_000_000) return '$'+(n/1_000_000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'M';
+  if(a>=1_000)     return '$'+(n/1_000).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+'K';
+  return '$'+n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 function fmtInt(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v); if (isNaN(n)) return null;
+  if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
   return Math.round(n).toLocaleString('es-MX');
 }
 function fmtPct(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v); if (isNaN(n)) return null;
-  const p = Math.abs(n) <= 1.5 ? n*100 : n;
-  return p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+  if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
+  const p=Math.abs(n)<=1.5?n*100:n;
+  return p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 }
 function fmtVsAA(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v); if (isNaN(n)) return null;
-  const p = Math.abs(n) <= 1.5 ? n*100 : n;
-  return (p >= 0 ? '+' : '') + p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+  if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
+  const p=Math.abs(n)<=1.5?n*100:n;
+  return(p>=0?'+':'')+p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 }
-function vsAAClass(v) {
-  if (isNullish(v)) return '';
-  const n = Number(v); if (isNaN(n)) return '';
-  return n >= 0 ? 'pos' : 'neg';
-}
+function vsAAClass(v) { if(isNullish(v))return''; const n=Number(v); return isNaN(n)?'':(n>=0?'pos':'neg'); }
 
-/* ════════════ PARSE RUTAS ════════════
-   Lee "Mes Completo" (o primera hoja) y devuelve:
-   { "YYYY-MM-DD": [ {Formato, Territorial, DET, Nombre, Segmentacion}, ... ] }
-*/
+/* ══════════════════════════════════════════════
+   PARSE RUTAS
+══════════════════════════════════════════════ */
 function parseRutas(wb) {
   const visitas = {};
-  // Buscar hoja — "Mes Completo" primero, si no la primera
-  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase().includes('completo'))
-                 || wb.SheetNames[0];
-  console.log('[Rutas] hoja usada:', sheetName);
-
+  const sheetName = wb.SheetNames.find(n=>n.trim().toLowerCase().includes('completo'))||wb.SheetNames[0];
   const ws   = wb.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: false });
-  if (!rows.length) return visitas;
-
-  const rawCols = Object.keys(rows[0]);
-  console.log('[Rutas] columnas:', rawCols);
+  const rows = XLSX.utils.sheet_to_json(ws,{defval:null,raw:false});
+  if(!rows.length) return visitas;
 
   const colMap = {};
-  for (const k of rawCols) colMap[normCol(k)] = k;
-
-  const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
+  for(const k of Object.keys(rows[0])) colMap[normCol(k)]=k;
+  const col=(...a)=>a.map(x=>colMap[normCol(x)]).find(v=>v!==undefined);
 
   const cFmt  = col('Formato','FORMATO');
   const cTerr = col('Territorial','TERRITORIAL');
   const cDET  = col('DET');
   const cNom  = col('Nombre','NOMBRE','Club','CLUB');
   const cSeg  = col('Segmentación actual','Segmentacion actual','SEGMENTACION','Segmentación','Segmentacion');
+  const visitCols = VISIT_COLS.map(vc=>col(vc)).filter(Boolean);
 
-  // Columnas de visita que existen en este archivo
-  const visitCols = VISIT_COLS.map(vc => col(vc)).filter(Boolean);
-  console.log('[Rutas] cols de visita encontradas:', visitCols);
-
-  for (const row of rows) {
-    const det = row[cDET];
-    if (isNullish(det)) continue;
-
+  for(const row of rows) {
+    const det=row[cDET]; if(isNullish(det)) continue;
     const entry = {
-      Formato:      String(row[cFmt]  || '').trim(),
-      Territorial:  String(row[cTerr] || '').trim(),
-      DET:          String(det).trim(),
-      Nombre:       String(row[cNom]  || '').trim(),
-      Segmentacion: String(row[cSeg]  || '').trim(),
+      Formato:     String(row[cFmt]||'').trim(),
+      Territorial: String(row[cTerr]||'').trim(),
+      DET:         String(det).trim(),
+      Nombre:      String(row[cNom]||'').trim(),
+      Segmentacion:String(row[cSeg]||'').trim(),
     };
-
-    for (const vc of visitCols) {
-      const rawDate = row[vc];
-      if (isNullish(rawDate)) continue;
-
-      // SheetJS con raw:false devuelve fechas como string "M/D/YYYY", "DD/MM/YYYY" o "YYYY-MM-DD"
-      // También puede venir como "4.may", "4/5/2026", etc.
-      const dateKey = parseDate(rawDate);
-      if (!dateKey) continue;
-
-      if (!visitas[dateKey]) visitas[dateKey] = [];
+    for(const vc of visitCols) {
+      const dateKey = parseDate(row[vc]);
+      if(!dateKey) continue;
+      if(!visitas[dateKey]) visitas[dateKey]=[];
       visitas[dateKey].push(entry);
     }
   }
-  console.log('[Rutas] fechas encontradas:', Object.keys(visitas).sort());
   return visitas;
 }
 
-/* Convierte cualquier representación de fecha a "YYYY-MM-DD" */
 function parseDate(raw) {
-  if (!raw) return null;
+  if(!raw) return null;
   const s = String(raw).trim();
-
-  // Ya viene como YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
-  // Formato "DD/MM/YYYY" o "M/D/YYYY"
-  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slash) {
-    const [,a,b,y] = slash;
-    // Heurístico: si primero > 12 es DD/MM, si no asumimos MM/DD (Excel US)
-    const [dd,mm] = Number(a) > 12 ? [a,b] : [b,a];
-    return `${y}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const slash=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(slash){const[,a,b,y]=slash;const[dd,mm]=Number(a)>12?[a,b]:[b,a];return`${y}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;}
+  const dot=s.match(/^(\d{1,2})\.([\wé]+)\.?$/i);
+  if(dot){
+    const day=dot[1].padStart(2,'0');
+    const monStr=dot[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const monIdx=MESES_CORTO.findIndex(m=>monStr.startsWith(m));
+    if(monIdx>=0){const year=new Date().getFullYear();return`${year}-${String(monIdx+1).padStart(2,'0')}-${day}`;}
   }
-
-  // Formato "4.may", "4.mayo" (como en la imagen)
-  const dot = s.match(/^(\d{1,2})\.([\wé]+)\.?$/i);
-  if (dot) {
-    const day = dot[1].padStart(2,'0');
-    const monStr = dot[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const monIdx = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-                    .findIndex(m => monStr.startsWith(m));
-    if (monIdx >= 0) {
-      const year = new Date().getFullYear();
-      return `${year}-${String(monIdx+1).padStart(2,'0')}-${day}`;
-    }
-  }
-
-  // Número serial de Excel (ej. 46xxx)
-  const num = Number(s);
-  if (!isNaN(num) && num > 40000 && num < 60000) {
-    const d = XLSX.SSF.parse_date_code(num);
-    if (d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
-  }
-
+  const num=Number(s);
+  if(!isNaN(num)&&num>40000&&num<60000){const d=XLSX.SSF.parse_date_code(num);if(d)return`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
   return null;
 }
 
-/* ════════════ PARSE KPIs ════════════ */
+/* ══════════════════════════════════════════════
+   PARSE KPIs
+══════════════════════════════════════════════ */
 function parseKpis(wb) {
   const kpiMap = {};
-  console.log('[KPIs] pestañas:', wb.SheetNames);
-
-  for (const [sheetKey] of Object.entries(SHEET_TO_FORMAT)) {
-    const realName = wb.SheetNames.find(n => n.trim().toUpperCase() === sheetKey.toUpperCase())
-                  || wb.SheetNames.find(n => n.trim().toUpperCase().includes(sheetKey));
-    if (!realName) { console.warn('[KPIs] pestaña no encontrada:', sheetKey); continue; }
-
-    const ws   = wb.Sheets[realName];
-    const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
-    if (!rows.length) continue;
-
-    const colMap = {};
-    for (const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
-    const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
-
-    // Aliases cubren los nombres reales de BA, WM y SMC
+  for(const [sheetKey] of Object.entries(SHEET_TO_FORMAT)){
+    const realName=wb.SheetNames.find(n=>n.trim().toUpperCase()===sheetKey)||wb.SheetNames.find(n=>n.trim().toUpperCase().includes(sheetKey));
+    if(!realName) continue;
+    const ws=wb.Sheets[realName];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:null,raw:true});
+    if(!rows.length) continue;
+    const colMap={};
+    for(const k of Object.keys(rows[0])) colMap[normCol(k)]=k;
+    const col=(...a)=>a.map(x=>colMap[normCol(x)]).find(v=>v!==undefined);
     const cDET  = col('DET','DTTE');
     const cVENTA= col('VENTA','VENTA ($)','VENTA 2026','VENTAS','VENTA MES');
     const cELEG = col('ELEGIBLES','ELEGIBLE','ELEG');
@@ -332,160 +423,258 @@ function parseKpis(wb) {
     const cGE   = col('GE','GARANTIA EXTENDIDA','GARANTÍAS 2026','GARANTIAS 2026','GARANTIA');
     const cCONV = col('% CONV','%CONV','CONV%','CONV %','CONVERSION','CONVERSIÓN','CONV');
     const cVSAA = col('VS AA','CR. VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA');
-
-    console.log(`[KPIs][${realName}] DET:${cDET} VENTA:${cVENTA} GE:${cGE} PLAN:${cPLAN} ELEG:${cELEG} CONV:${cCONV} VSAA:${cVSAA}`);
-
-    for (const row of rows) {
-      const det = row[cDET];
-      if (isNullish(det)) continue;
-      const key = String(det).trim();
-      if (!key || key.toUpperCase() === 'DET') continue;
-      kpiMap[key] = {
-        venta:     row[cVENTA] ?? null,
-        vsAA:      row[cVSAA]  ?? null,
-        ge:        row[cGE]    ?? null,
-        planGE:    row[cPLAN]  ?? null,
-        elegibles: row[cELEG]  ?? null,
-        conv:      row[cCONV]  ?? null,
-      };
+    for(const row of rows){
+      const det=row[cDET]; if(isNullish(det)) continue;
+      const key=String(det).trim(); if(!key||key.toUpperCase()==='DET'||key.toUpperCase()==='DTTE') continue;
+      kpiMap[key]={ venta:row[cVENTA]??null, vsAA:row[cVSAA]??null, ge:row[cGE]??null, planGE:row[cPLAN]??null, elegibles:row[cELEG]??null, conv:row[cCONV]??null };
     }
   }
-  console.log('[KPIs] total registros:', Object.keys(kpiMap).length);
   return kpiMap;
 }
 
-/* ════════════ FETCH ════════════ */
-async function fetchXlsx(url, label) {
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`${label}: HTTP ${resp.status}`);
-  const buf = await resp.arrayBuffer();
-  if (buf.byteLength < 500) throw new Error(`${label}: respuesta vacía`);
-  console.log(`[Fetch] ${label} OK — ${buf.byteLength} bytes`);
-  return buf;
+/* ══════════════════════════════════════════════
+   RENDER CARD HTML
+══════════════════════════════════════════════ */
+function getFormatClass(f){f=(f||'').toLowerCase();return f.includes('super')?'supercenter':f.includes('bodega')?'bodega':'sams';}
+function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🛒':f.includes('bodega')?'🏪':'🏢';}
+function getSegClass(s){s=(s||'').toLowerCase();return s.includes('bottom low')?'seg-bottom-low':s.includes('bottom high')?'seg-bottom-high':s.includes('cero')?'seg-cero':s.includes('medium')?'seg-medium':s.includes('top')?'seg-top':'seg-other';}
+function dash(){return'<span class="dash">—</span>';}
+
+function buildCard(s, i, kpi) {
+  const cls=getFormatClass(s.Formato), icon=getFormatIcon(s.Formato), segCls=getSegClass(s.Segmentacion);
+  kpi = kpi||{};
+  const ventaStr=fmtPeso(kpi.venta), vsAAStr=fmtVsAA(kpi.vsAA), vsAACls=vsAAClass(kpi.vsAA);
+  const geStr=fmtInt(kpi.ge), planStr=fmtInt(kpi.planGE), elegStr=fmtInt(kpi.elegibles), convStr=fmtPct(kpi.conv);
+  const num = i!=null ? `<div class="order-num">${i+1}</div>` : '';
+  return `<div class="card ${cls}">
+    <div class="card-top">
+      ${num}
+      <div class="card-info">
+        <div class="store-name">${icon} ${s.Nombre||s.DET}</div>
+        <div class="meta">
+          <span class="tag tag-format">${s.Formato}</span>
+          <span class="tag tag-det">DET ${s.DET}</span>
+          <span class="tag tag-seg ${segCls}">${s.Segmentacion}</span>
+        </div>
+        <div class="territorial">👤 ${s.Territorial}</div>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Venta / vs AA</div><div class="kpi-main">${ventaStr??dash()}</div><div class="kpi-sub ${vsAACls}">${vsAAStr??dash()}</div></div>
+      <div class="kpi"><div class="kpi-label">GE / Plan GE</div><div class="kpi-main">${geStr??dash()}</div><div class="kpi-sub">${planStr??dash()}</div></div>
+      <div class="kpi"><div class="kpi-label">Elegibles / Conv%</div><div class="kpi-main">${elegStr??dash()}</div><div class="kpi-sub">${convStr??dash()}</div></div>
+    </div>
+  </div>`;
 }
 
-/* ════════════ STEP UI ════════════ */
-function step(id, state) {
-  const el = document.getElementById(id);
-  if (el) el.className = `step ${state}`;
-}
+/* ══════════════════════════════════════════════
+   RENDER PAGE
+══════════════════════════════════════════════ */
+function renderDay(key) {
+  activeKey = key;
+  const today = todayKey();
+  const isToday = key === today;
 
-/* ════════════ RENDER ════════════ */
-function dash() { return '<span class="dash">—</span>'; }
+  // Date label (sin año)
+  document.getElementById('date-label').textContent = formatShort(key);
 
-function renderCards(stores, kpiMap, rutasOk, kpisOk) {
+  // Viewing banner
+  const banner = document.getElementById('viewing-banner');
+  if(isToday){
+    banner.classList.remove('show');
+  } else {
+    banner.textContent = `📌 Viendo: ${formatShort(key)} — no es hoy`;
+    banner.classList.add('show');
+  }
+
+  // Summary label
+  document.getElementById('summary-label').textContent = isToday ? 'tiendas programadas hoy' : 'tiendas ese día';
+
   const summaryBar = document.getElementById('summary-bar');
   const content    = document.getElementById('main-content');
+  const stores     = allVisitas[key] || [];
 
-  if (!stores || !stores.length) {
-    summaryBar.style.display = 'none';
-    content.innerHTML = `
-      <div class="status-box">
-        <div class="icon">📅</div>
-        <h2>Sin visitas programadas hoy</h2>
-        <p>No hay tiendas asignadas para esta fecha en el archivo de rutas.</p>
-      </div>`;
+  if(!stores.length){
+    summaryBar.style.display='none';
+    content.innerHTML=`<div class="status-box"><div class="icon">📅</div><h2>Sin visitas programadas</h2><p>No hay tiendas asignadas para ${formatShort(key)}.</p></div>`;
     return;
   }
 
-  summaryBar.style.display = 'flex';
-  document.getElementById('total-count').textContent = stores.length;
+  summaryBar.style.display='flex';
+  document.getElementById('total-count').textContent=stores.length;
 
-  const cards = stores.map((s, i) => {
-    const cls    = getFormatClass(s.Formato);
-    const icon   = getFormatIcon(s.Formato);
-    const segCls = getSegClass(s.Segmentacion);
-    const kpi    = kpiMap[s.DET] || {};
-
-    const ventaStr = fmtPeso(kpi.venta);
-    const vsAAStr  = fmtVsAA(kpi.vsAA);
-    const vsAACls  = vsAAClass(kpi.vsAA);
-    const geStr    = fmtInt(kpi.ge);
-    const planStr  = fmtInt(kpi.planGE);
-    const elegStr  = fmtInt(kpi.elegibles);
-    const convStr  = fmtPct(kpi.conv);
-
-    return `<div class="card ${cls}">
-      <div class="card-top">
-        <div class="order-num">${i+1}</div>
-        <div class="card-info">
-          <div class="store-name">${icon} ${s.Nombre || s.DET}</div>
-          <div class="meta">
-            <span class="tag tag-format">${s.Formato}</span>
-            <span class="tag tag-det">DET ${s.DET}</span>
-            <span class="tag tag-seg ${segCls}">${s.Segmentacion}</span>
-          </div>
-          <div class="territorial">👤 ${s.Territorial}</div>
-        </div>
-      </div>
-      <div class="kpis">
-        <div class="kpi">
-          <div class="kpi-label">Venta / vs AA</div>
-          <div class="kpi-main">${ventaStr ?? dash()}</div>
-          <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">GE / Plan GE</div>
-          <div class="kpi-main">${geStr ?? dash()}</div>
-          <div class="kpi-sub">${planStr ?? dash()}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Elegibles / Conv%</div>
-          <div class="kpi-main">${elegStr ?? dash()}</div>
-          <div class="kpi-sub">${convStr ?? dash()}</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const notes = [];
-  if (!rutasOk) notes.push('⚠️ Rutas: no se pudo descargar el archivo');
-  if (!kpisOk)  notes.push('⚠️ Ventas: no se pudo descargar el archivo');
-  const noteHtml = notes.length
-    ? `<p class="data-note err">${notes.join(' · ')}</p>`
-    : `<p class="data-note">📊 Datos actualizados al cargar · Fuente: Google Drive</p>`;
-
-  content.innerHTML = `<div class="cards">${cards}</div>${noteHtml}`;
+  const cards = stores.map((s,i)=>buildCard(s,i,allKpis[s.DET])).join('');
+  content.innerHTML=`<div class="cards">${cards}</div><p class="data-note">📊 Datos actualizados al cargar · Google Drive</p>`;
 }
 
-/* ════════════ MAIN ════════════ */
-async function init() {
-  const key = getTodayKey();
-  document.getElementById('date-badge').textContent = formatDateNice(key);
+/* ══════════════════════════════════════════════
+   CALENDAR
+══════════════════════════════════════════════ */
+function openCal(){
+  const dt = keyToDate(activeKey||todayKey());
+  calYear=dt.getFullYear(); calMonth=dt.getMonth();
+  renderCal();
+  document.getElementById('cal-overlay').classList.add('open');
+}
+function closeCal(){ document.getElementById('cal-overlay').classList.remove('open'); }
+function calNav(dir){ calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
 
-  let visitas = {}, kpiMap = {}, rutasOk = false, kpisOk = false;
+function renderCal(){
+  document.getElementById('cal-month-label').textContent=`${MESES_ES[calMonth].charAt(0).toUpperCase()+MESES_ES[calMonth].slice(1)} ${calYear}`;
+  const grid=document.getElementById('cal-grid');
+  const today=todayKey();
+  // Day-of-week headers (L M X J V S D)
+  const dowLabels=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  let html=dowLabels.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  // First day of month (0=Sun...6=Sat), convert to Mon-based
+  const first=new Date(calYear,calMonth,1).getDay();
+  const offset=(first===0?6:first-1);
+  for(let i=0;i<offset;i++) html+=`<div class="cal-day empty"></div>`;
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const k=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=k===today, isSel=k===activeKey, hasV=!!allVisitas[k];
+    const cls=['cal-day',isToday?'today':'',isSel?'selected':'',hasV?'has-visits':''].filter(Boolean).join(' ');
+    html+=`<div class="${cls}" onclick="selectCalDay('${k}')">${d}</div>`;
+  }
+  grid.innerHTML=html;
+}
 
-  // ── 1. Rutas
-  step('step-rutas', 'active');
-  try {
-    const buf = await fetchXlsx(URL_RUTAS, 'Rutas');
-    const wb  = XLSX.read(buf, { type: 'array', raw: false, cellDates: false });
-    visitas   = parseRutas(wb);
-    rutasOk   = true;
-    step('step-rutas', 'done');
-  } catch(e) {
-    console.error('[Rutas] error:', e);
-    step('step-rutas', 'err');
+function selectCalDay(key){
+  closeCal();
+  renderDay(key);
+}
+
+/* ══════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════ */
+function toggleSearch(){
+  const box=document.getElementById('search-box');
+  const input=document.getElementById('search-input');
+  if(box.classList.contains('expanded')){
+    if(input.value.trim()) doSearch();
+    else { box.classList.remove('expanded'); input.value=''; }
+  } else {
+    box.classList.add('expanded');
+    setTimeout(()=>input.focus(),50);
+  }
+}
+function clearSearch(){
+  const box=document.getElementById('search-box');
+  document.getElementById('search-input').value='';
+  box.classList.remove('expanded');
+}
+function doSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q) return;
+  document.getElementById('search-full-input').value=q;
+  openSearchPopup();
+  execSearch();
+}
+
+function openSearchPopup(){
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('search-full-input').focus(),50);
+}
+function closeSearch(){
+  document.getElementById('search-overlay').classList.remove('open');
+  clearSearch();
+}
+
+function execSearch(){
+  const q=(document.getElementById('search-full-input').value||'').trim().toLowerCase();
+  const resultsEl=document.getElementById('search-results');
+  if(!q){ resultsEl.innerHTML=`<div class="no-result">Escribe un nombre o DET para buscar</div>`; return; }
+
+  // Buscar en TODAS las tiendas del mes (sin importar fecha)
+  const seen=new Set();
+  const matches=[];
+  for(const stores of Object.values(allVisitas)){
+    for(const s of stores){
+      if(seen.has(s.DET)) continue;
+      if(s.Nombre.toLowerCase().includes(q)||s.DET.includes(q)){
+        seen.add(s.DET);
+        matches.push(s);
+      }
+    }
   }
 
-  // ── 2. KPIs
-  step('step-kpis', 'active');
-  try {
-    const buf = await fetchXlsx(URL_KPIS, 'KPIs');
-    const wb  = XLSX.read(buf, { type: 'array', cellDates: false });
-    kpiMap    = parseKpis(wb);
-    kpisOk    = true;
-    step('step-kpis', 'done');
-  } catch(e) {
-    console.error('[KPIs] error:', e);
-    step('step-kpis', 'err');
+  if(!matches.length){
+    resultsEl.innerHTML=`<div class="no-result">No se encontró ninguna tienda con "<strong>${q}</strong>"</div>`;
+    return;
   }
 
-  // ── 3. Render
-  step('step-render', 'active');
-  const stores = visitas[key] || [];
-  renderCards(stores, kpiMap, rutasOk, kpisOk);
-  step('step-render', 'done');
+  resultsEl.innerHTML=matches.map(s=>buildCard(s,null,allKpis[s.DET])).join('');
+}
+
+/* ══════════════════════════════════════════════
+   REFRESH
+══════════════════════════════════════════════ */
+function doRefresh(){
+  const btn=document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  // Limpiar caché y recargar
+  allVisitas={}; allKpis={};
+  init().finally(()=>btn.classList.remove('spinning'));
+}
+
+/* ══════════════════════════════════════════════
+   FETCH & PARSE
+══════════════════════════════════════════════ */
+async function fetchXlsx(url){
+  const resp=await fetch(url);
+  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const buf=await resp.arrayBuffer();
+  if(buf.byteLength<500) throw new Error('Respuesta vacía');
+  return buf;
+}
+function step(id,state){ const el=document.getElementById(id); if(el) el.className=`step ${state}`; }
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+async function init(){
+  const key = todayKey();
+  document.getElementById('date-label').textContent = formatShort(key);
+
+  // Reset loading UI
+  document.getElementById('main-content').innerHTML=`
+    <div class="status-box">
+      <div class="spinner"></div><h2>Cargando datos...</h2>
+      <div class="load-steps">
+        <div class="step active" id="step-rutas"><span class="step-icon"></span>Descargando rutas del mes</div>
+        <div class="step wait"   id="step-kpis"><span class="step-icon"></span>Descargando datos de ventas</div>
+        <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
+      </div>
+    </div>`;
+  document.getElementById('summary-bar').style.display='none';
+
+  let rutasOk=false, kpisOk=false;
+
+  step('step-rutas','active');
+  try {
+    const buf=await fetchXlsx(URL_RUTAS);
+    const wb=XLSX.read(buf,{type:'array',raw:false,cellDates:false});
+    allVisitas=parseRutas(wb);
+    rutasOk=true; step('step-rutas','done');
+  } catch(e){ console.error('[Rutas]',e); step('step-rutas','err'); }
+
+  step('step-kpis','active');
+  try {
+    const buf=await fetchXlsx(URL_KPIS);
+    const wb=XLSX.read(buf,{type:'array',cellDates:false});
+    allKpis=parseKpis(wb);
+    kpisOk=true; step('step-kpis','done');
+  } catch(e){ console.error('[KPIs]',e); step('step-kpis','err'); }
+
+  step('step-render','active');
+  renderDay(key);
+  step('step-render','done');
+
+  if(!rutasOk||!kpisOk){
+    const note=document.querySelector('.data-note');
+    if(note){ note.classList.add('err'); note.textContent='⚠️ No se pudo cargar alguno de los archivos de Drive'; }
+  }
 }
 
 init();
