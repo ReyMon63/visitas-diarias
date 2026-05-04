@@ -7,156 +7,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #0d1117;
-    color: #e6edf3;
-    min-height: 100vh;
-    padding: 0 0 40px;
-  }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 0 0 48px; }
 
   .header {
     background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
-    padding: 28px 24px 22px;
-    text-align: center;
+    padding: 28px 24px 22px; text-align: center;
     box-shadow: 0 4px 20px rgba(0,120,212,0.4);
   }
   .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
   .header .subtitle { font-size: 0.85rem; opacity: 0.85; }
   .date-badge {
     display: inline-block;
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 20px;
-    padding: 6px 18px;
-    margin-top: 14px;
-    font-size: 1rem;
-    font-weight: 600;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px; padding: 6px 18px; margin-top: 14px;
+    font-size: 1rem; font-weight: 600;
   }
-  .refresh-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 14px;
-    margin-left: 10px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .refresh-btn:active { background: rgba(255,255,255,0.3); }
-  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
 
   .summary {
-    background: #161b22;
-    border-bottom: 1px solid #30363d;
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
+    background: #161b22; border-bottom: 1px solid #30363d;
+    padding: 12px 24px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
   }
-  .summary .count {
-    background: #0078d4;
-    border-radius: 12px;
-    padding: 3px 12px;
-    font-weight: 700;
-    font-size: 1rem;
-  }
+  .summary .count { background: #0078d4; border-radius: 12px; padding: 3px 12px; font-weight: 700; font-size: 1rem; }
   .summary .label { opacity: 0.75; }
-  .det-search {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #21262d;
-    border: 1px solid #30363d;
-    border-radius: 20px;
-    padding: 4px 12px;
-    transition: border-color 0.2s;
-  }
-  .det-search:focus-within { border-color: #0078d4; }
-  .det-search svg { color: #6e7681; flex-shrink: 0; }
-  .det-search input {
-    background: none;
-    border: none;
-    outline: none;
-    color: #e6edf3;
-    font-size: 0.9rem;
-    width: 72px;
-    -webkit-appearance: none;
-    -moz-appearance: textfield;
-  }
-  .det-search input::placeholder { color: #484f58; }
-  .det-search input::-webkit-outer-spin-button,
-  .det-search input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-  .cards {
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    max-width: 700px;
-    margin: 0 auto;
-  }
+  .cards { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 700px; margin: 0 auto; }
 
-  .card {
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
   .card:hover { border-color: #0078d4; }
 
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px 18px 12px;
-    border-left: 4px solid;
-  }
+  .card-top { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px 12px; border-left: 4px solid; }
   .supercenter .card-top { border-color: #0078d4; }
   .bodega      .card-top { border-color: #f0883e; }
   .sams        .card-top { border-color: #3fb950; }
 
-  .order-num {
-    min-width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
-  }
+  .order-num { min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
   .supercenter .order-num { background: rgba(0,120,212,0.2); color: #58a6ff; border: 1.5px solid #0078d4; }
   .bodega      .order-num { background: rgba(240,136,62,0.2); color: #f0883e; border: 1.5px solid #f0883e; }
   .sams        .order-num { background: rgba(63,185,80,0.2);  color: #3fb950; border: 1.5px solid #3fb950; }
 
   .card-info { flex: 1; min-width: 0; }
-  .store-name-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 5px;
-  }
-  .store-name {
-    font-size: 1.05rem; font-weight: 600;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    flex: 1; min-width: 0;
-  }
-  .ge-rate {
-    font-size: 1.05rem; font-weight: 600;
-    white-space: nowrap; flex-shrink: 0;
-    color: #e6edf3;
-  }
-  .ge-rate.done { color: #3fb950; }
-  .ge-rate .ge-sep { color: #484f58; font-weight: 400; margin: 0 3px; }
+  .store-name { font-size: 1.05rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
   .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; }
   .tag { border-radius: 6px; padding: 2px 9px; font-weight: 500; white-space: nowrap; }
   .tag-format { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
@@ -170,72 +60,33 @@
   .seg-other       { background: #21262d; color: #8b949e; border-color: #30363d; }
   .territorial { font-size: 0.78rem; color: #6e7681; margin-top: 4px; }
 
-  /* KPI ROW */
-  .kpis {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid #21262d;
-  }
-  .kpi {
-    padding: 10px 10px;
-    border-right: 1px solid #21262d;
-    text-align: center;
-  }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #21262d; }
+  .kpi { padding: 10px 8px; border-right: 1px solid #21262d; text-align: center; }
   .kpi:last-child { border-right: none; }
-  .kpi-label {
-    font-size: 0.63rem;
-    color: #6e7681;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 5px;
-    white-space: nowrap;
-  }
-  .kpi-main {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #e6edf3;
-    white-space: nowrap;
-  }
-  .kpi-sub {
-    font-size: 0.75rem;
-    color: #8b949e;
-    margin-top: 3px;
-    white-space: nowrap;
-    font-weight: 500;
-  }
+  .kpi-label { font-size: 0.63rem; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; white-space: nowrap; }
+  .kpi-main  { font-size: 0.95rem; font-weight: 700; color: #e6edf3; white-space: nowrap; }
+  .kpi-sub   { font-size: 0.75rem; color: #8b949e; margin-top: 3px; white-space: nowrap; font-weight: 500; }
   .kpi-sub.pos { color: #3fb950; }
   .kpi-sub.neg { color: #f85149; }
-  .kpi-dash { color: #484f58; }
+  .dash { color: #484f58; }
 
-  /* STATUS SCREENS */
-  .status-box {
-    text-align: center;
-    padding: 60px 24px;
-    color: #8b949e;
-    max-width: 700px;
-    margin: 0 auto;
-  }
+  .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
   .status-box .icon { font-size: 3rem; margin-bottom: 14px; }
   .status-box h2 { font-size: 1.1rem; margin-bottom: 8px; color: #c9d1d9; }
   .status-box p  { font-size: 0.88rem; line-height: 1.6; }
-  .spinner {
-    width: 40px; height: 40px;
-    border: 3px solid #30363d;
-    border-top-color: #0078d4;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
-  }
+
+  .spinner { width: 40px; height: 40px; border: 3px solid #30363d; border-top-color: #0078d4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .data-note {
-    text-align: center;
-    font-size: 0.72rem;
-    color: #484f58;
-    padding: 8px 16px 0;
-    max-width: 700px;
-    margin: 0 auto;
-  }
+  .load-steps { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .step { font-size: 0.82rem; display: flex; align-items: center; gap: 8px; }
+  .step-icon { width: 18px; text-align: center; }
+  .step.done   .step-icon::before { content: '✅'; }
+  .step.active .step-icon::before { content: '⏳'; }
+  .step.wait   .step-icon::before { content: '⬜'; }
+  .step.err    .step-icon::before { content: '❌'; }
+
+  .data-note { text-align: center; font-size: 0.72rem; color: #484f58; padding: 10px 16px 0; max-width: 700px; margin: 0 auto; }
   .data-note.err { color: #f85149; }
 </style>
 </head>
@@ -245,56 +96,45 @@
   <h1>📋 Visitas del Día</h1>
   <div class="subtitle">Ramón Rivas · Monterrey</div>
   <div class="date-badge" id="date-badge">—</div>
-  <button class="refresh-btn" id="refresh-btn" onclick="forceRefresh()">
-    <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="23 4 23 10 17 10"></polyline>
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-    </svg>
-    Actualizar
-  </button>
 </div>
 
 <div class="summary" id="summary-bar" style="display:none;">
   <span class="count" id="total-count">0</span>
   <span class="label">tiendas programadas hoy</span>
-  <div class="det-search">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-    <input type="number" id="det-input" placeholder="DET..." oninput="filterByDet(this.value)">
-  </div>
 </div>
 
 <div id="main-content">
   <div class="status-box">
     <div class="spinner"></div>
     <h2>Cargando datos...</h2>
-    <p>Descargando el archivo de ventas desde Google Drive.</p>
+    <div class="load-steps">
+      <div class="step active" id="step-rutas"><span class="step-icon"></span>Descargando rutas del mes</div>
+      <div class="step wait"   id="step-kpis" ><span class="step-icon"></span>Descargando datos de ventas</div>
+      <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
+    </div>
   </div>
 </div>
 
 <script>
-/* ── CONFIG ───────────────────────────────────────────────── */
-const FILE_ID = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
+/* ════════════════════════════════════════════════════
+   CONFIG — solo cambia los IDs si mueves los archivos
+   ════════════════════════════════════════════════════ */
+const ID_RUTAS = '1bevJZBCYV8VEufpVaUU0fBRW-xgEBh_h'; // Resumen_Visitas.xlsx
+const ID_KPIS  = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY'; // KPIs (BA / WM / SMC)
 
-const XLSX_URLS = [
-  `https://docs.google.com/spreadsheets/d/${FILE_ID}/export?format=xlsx`,
-];
+const URL_RUTAS = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
+const URL_KPIS  = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
 
-// Pestañas del archivo de ventas → Formato de tienda
-const SHEET_TO_FORMAT = {
-  'BA':  'Bodega Aurrera',
-  'WM':  'Supercenter',
-  'SMC': "Sam´s"
-};
+// Columnas de visita en el archivo de rutas (soporta hasta Visita 5)
+const VISIT_COLS = ['Visita 1','Visita 2','Visita 3','Visita 4','Visita 5'];
+
+// Pestañas del archivo de KPIs → Formato
+const SHEET_TO_FORMAT = { BA: 'Bodega Aurrera', WM: 'Supercenter', SMC: "Sam´s" };
 
 const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-/* ── RUTAS (datos hardcoded del xlsx de planificación) ───── */
-const VISITAS = {"2026-04-01":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4823","Club":"Reforma Huinala","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3623","Club":"Los Fresnos","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"5081","Club":"Calzada Del Sol","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3051","Club":"Plaza Centrika","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6320","Club":"Camino a Huinalá","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1234","Club":"Apodaca Sur","Segmentacion":"Cero Productividad"}],"2026-04-06":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1833","Club":"La Pastora","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4991","Club":"La Pastora","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1900","Club":"Dos Ríos","Segmentacion":"Bottom low"}],"2026-04-07":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2676","Club":"La Fe","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3713","Club":"Ruiz Cortines","Segmentacion":"Medium"}],"2026-04-08":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1105","Club":"Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4138","Club":"Sc Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5802","Club":"Paseo Juarez","Segmentacion":"Medium"}],"2026-04-09":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1622","Club":"Gomez Morin","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4978","Club":"Gomez Morín","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2044","Club":"Valle Oriente","Segmentacion":"Bottom low"}],"2026-04-10":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6293","Club":"Santa Catarina","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3443","Club":"Clouthier","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1139","Club":"La Huasteca","Segmentacion":"Bottom low"}],"2026-04-13":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6392","Club":"Gonzalitos","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3720","Club":"Lincoln","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3239","Club":"Paseo Real","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3114","Club":"Cumbres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6229","Club":"Cumbres","Segmentacion":"Medium"}],"2026-04-14":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2034","Club":"Las Torres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6275","Club":"Las Torres","Segmentacion":"Bottom high"}],"2026-04-15":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1027","Club":"Sendero","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2645","Club":"Escobedo Norte","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1927","Club":"Puerta del Sol","Segmentacion":"Cero Productividad"}],"2026-04-16":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3623","Club":"Los Fresnos","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3801","Club":"Santo Domingo","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6204","Club":"San Nicolás","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2179","Club":"San Nicolas","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5055","Club":"Concordia","Segmentacion":"Bottom low"}],"2026-04-17":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"5081","Club":"Calzada Del Sol","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4809","Club":"Apodaca Norte","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"889","Club":"Cuspide","Segmentacion":"Bottom low"}],"2026-04-19":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3051","Club":"Plaza Centrika","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3625","Club":"Diaz Berlanga","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5801","Club":"Lopez Mateos Fundidores","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1867","Club":"Félix Galván","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2076","Club":"Miguel Aleman","Segmentacion":"Bottom high"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6468","Club":"Miguel Alemán","Segmentacion":"Medium"}],"2026-04-20":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"4823","Club":"Reforma Huinala","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1833","Club":"La Pastora","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4991","Club":"La Pastora","Segmentacion":"Bottom high"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1900","Club":"Dos Ríos","Segmentacion":"Bottom low"}],"2026-04-21":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1622","Club":"Gomez Morin","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"4978","Club":"Gomez Morín","Segmentacion":"Bottom high"}],"2026-04-22":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1105","Club":"Villa Juarez","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5802","Club":"Paseo Juarez","Segmentacion":"Medium"}],"2026-04-23":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6293","Club":"Santa Catarina","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3443","Club":"Clouthier","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1139","Club":"La Huasteca","Segmentacion":"Bottom low"}],"2026-04-24":[{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6392","Club":"Gonzalitos","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3720","Club":"Lincoln","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3239","Club":"Paseo Real","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"3114","Club":"Cumbres","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6229","Club":"Cumbres","Segmentacion":"Medium"}],"2026-04-27":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"1027","Club":"Sendero","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2645","Club":"Escobedo Norte","Segmentacion":"Medium"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1927","Club":"Puerta del Sol","Segmentacion":"Cero Productividad"}],"2026-04-28":[{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2044","Club":"Valle Oriente","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2034","Club":"Las Torres","Segmentacion":"Bottom low"}],"2026-04-29":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1234","Club":"Apodaca Sur","Segmentacion":"Cero Productividad"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3801","Club":"Santo Domingo","Segmentacion":"Bottom low"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6204","Club":"San Nicolás","Segmentacion":"Bottom high"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2179","Club":"San Nicolas","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5055","Club":"Concordia","Segmentacion":"Bottom low"}],"2026-04-30":[{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"3625","Club":"Diaz Berlanga","Segmentacion":"Cero Productividad"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"5801","Club":"Lopez Mateos Fundidores","Segmentacion":"Bottom low"},{"Formato":"Bodega Aurrera","Territorial":"Ramón Rivas","DET":"1867","Club":"Félix Galván","Segmentacion":"Bottom low"},{"Formato":"Supercenter","Territorial":"Ramón Rivas","DET":"2076","Club":"Miguel Aleman","Segmentacion":"Bottom high"},{"Formato":"Sam´s","Territorial":"Ramón Rivas","DET":"6468","Club":"Miguel Alemán","Segmentacion":"Medium"}]};
-
-/* ── HELPERS ─────────────────────────────────────────────── */
+/* ════════════ HELPERS ════════════ */
 function getTodayKey() {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
@@ -325,150 +165,215 @@ function getSegClass(s) {
   if (s.includes('top'))         return 'seg-top';
   return 'seg-other';
 }
-
-/* ── FORMATTERS ──────────────────────────────────────────── */
 function isNullish(v) { return v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v)); }
-
-// Moneda: detecta si viene en millones (< 1000 aprox) o en pesos directos (>= 1000)
-function fmtPeso(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v);
-  if (isNaN(n)) return null;
-  const abs = Math.abs(n);
-  if (abs >= 1_000_000) {
-    return '$' + (n/1_000_000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) + 'M';
-  }
-  if (abs >= 1_000) {
-    return '$' + (n/1_000).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + 'K';
-  }
-  return '$' + n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
-}
-
-// Entero con separador de miles
-function fmtInt(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v);
-  if (isNaN(n)) return null;
-  return Math.round(n).toLocaleString('es-MX');
-}
-
-// Porcentaje: si viene entre -1.5 y 1.5 asume decimal (0.85 → 85%), si no lo toma directo
-function fmtPct(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v);
-  if (isNaN(n)) return null;
-  const pct = Math.abs(n) <= 1.5 ? n * 100 : n;
-  return pct.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
-}
-
-// vs AA con signo + / -
-function fmtVsAA(v) {
-  if (isNullish(v)) return null;
-  const n = Number(v);
-  if (isNaN(n)) return null;
-  const pct = Math.abs(n) <= 1.5 ? n * 100 : n;
-  return (pct >= 0 ? '+' : '') + pct.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
-}
-
-function vsAAClass(v) {
-  if (isNullish(v)) return '';
-  const n = Number(v);
-  if (isNaN(n)) return '';
-  return n >= 0 ? 'pos' : 'neg';
-}
-
-/* ── GE DAILY RATE ───────────────────────────────────────── */
-function calcGeRate(ge, planGE) {
-  if (isNullish(planGE) || Number(planGE) <= 0) return null;
-  const remaining = Math.max(0, Number(planGE) - Number(ge || 0));
-  if (remaining === 0) return { done: true };
-
-  const today = new Date();
-  const yr = today.getFullYear(), mo = today.getMonth();
-  const lastDay = new Date(yr, mo + 1, 0).getDate();
-  let weekdays = 0, weekendDays = 0;
-  for (let d = today.getDate(); d <= lastDay; d++) {
-    const dow = new Date(yr, mo, d).getDay();
-    (dow === 0 || dow === 6) ? weekendDays++ : weekdays++;
-  }
-  const totalDays = weekdays + weekendDays;
-  if (totalDays === 0) return { done: false, x: remaining, y: remaining };
-
-  // X = mínimo a vender cada día entre semana (al menos 1 si hay pendiente)
-  const x = weekdays > 0 ? Math.max(1, Math.floor(remaining / totalDays)) : 0;
-  // Y = lo que queda después de cubrir semana con X, repartido en días de finde
-  const remainingWeekend = Math.max(0, remaining - x * weekdays);
-  const y = weekendDays > 0 ? Math.max(x, Math.ceil(remainingWeekend / weekendDays)) : x;
-  return { done: false, x, y };
-}
-
-/* ── PARSE SHEETS ────────────────────────────────────────── */
 function normCol(s) {
   return String(s||'').trim().toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita acentos
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,' ');
 }
 
-function parseSheets(wb) {
+/* ════════════ FORMATTERS ════════════ */
+function fmtPeso(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v); if (isNaN(n)) return null;
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return '$' + (n/1_000_000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) + 'M';
+  if (a >= 1_000)     return '$' + (n/1_000).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + 'K';
+  return '$' + n.toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+function fmtInt(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v); if (isNaN(n)) return null;
+  return Math.round(n).toLocaleString('es-MX');
+}
+function fmtPct(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v); if (isNaN(n)) return null;
+  const p = Math.abs(n) <= 1.5 ? n*100 : n;
+  return p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+}
+function fmtVsAA(v) {
+  if (isNullish(v)) return null;
+  const n = Number(v); if (isNaN(n)) return null;
+  const p = Math.abs(n) <= 1.5 ? n*100 : n;
+  return (p >= 0 ? '+' : '') + p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+}
+function vsAAClass(v) {
+  if (isNullish(v)) return '';
+  const n = Number(v); if (isNaN(n)) return '';
+  return n >= 0 ? 'pos' : 'neg';
+}
+
+/* ════════════ PARSE RUTAS ════════════
+   Lee "Mes Completo" (o primera hoja) y devuelve:
+   { "YYYY-MM-DD": [ {Formato, Territorial, DET, Nombre, Segmentacion}, ... ] }
+*/
+function parseRutas(wb) {
+  const visitas = {};
+  // Buscar hoja — "Mes Completo" primero, si no la primera
+  const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase().includes('completo'))
+                 || wb.SheetNames[0];
+  console.log('[Rutas] hoja usada:', sheetName);
+
+  const ws   = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: false });
+  if (!rows.length) return visitas;
+
+  const rawCols = Object.keys(rows[0]);
+  console.log('[Rutas] columnas:', rawCols);
+
+  const colMap = {};
+  for (const k of rawCols) colMap[normCol(k)] = k;
+
+  const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
+
+  const cFmt  = col('Formato','FORMATO');
+  const cTerr = col('Territorial','TERRITORIAL');
+  const cDET  = col('DET');
+  const cNom  = col('Nombre','NOMBRE','Club','CLUB');
+  const cSeg  = col('Segmentación actual','Segmentacion actual','SEGMENTACION','Segmentación','Segmentacion');
+
+  // Columnas de visita que existen en este archivo
+  const visitCols = VISIT_COLS.map(vc => col(vc)).filter(Boolean);
+  console.log('[Rutas] cols de visita encontradas:', visitCols);
+
+  for (const row of rows) {
+    const det = row[cDET];
+    if (isNullish(det)) continue;
+
+    const entry = {
+      Formato:      String(row[cFmt]  || '').trim(),
+      Territorial:  String(row[cTerr] || '').trim(),
+      DET:          String(det).trim(),
+      Nombre:       String(row[cNom]  || '').trim(),
+      Segmentacion: String(row[cSeg]  || '').trim(),
+    };
+
+    for (const vc of visitCols) {
+      const rawDate = row[vc];
+      if (isNullish(rawDate)) continue;
+
+      // SheetJS con raw:false devuelve fechas como string "M/D/YYYY", "DD/MM/YYYY" o "YYYY-MM-DD"
+      // También puede venir como "4.may", "4/5/2026", etc.
+      const dateKey = parseDate(rawDate);
+      if (!dateKey) continue;
+
+      if (!visitas[dateKey]) visitas[dateKey] = [];
+      visitas[dateKey].push(entry);
+    }
+  }
+  console.log('[Rutas] fechas encontradas:', Object.keys(visitas).sort());
+  return visitas;
+}
+
+/* Convierte cualquier representación de fecha a "YYYY-MM-DD" */
+function parseDate(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+
+  // Ya viene como YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Formato "DD/MM/YYYY" o "M/D/YYYY"
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash) {
+    const [,a,b,y] = slash;
+    // Heurístico: si primero > 12 es DD/MM, si no asumimos MM/DD (Excel US)
+    const [dd,mm] = Number(a) > 12 ? [a,b] : [b,a];
+    return `${y}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+  }
+
+  // Formato "4.may", "4.mayo" (como en la imagen)
+  const dot = s.match(/^(\d{1,2})\.([\wé]+)\.?$/i);
+  if (dot) {
+    const day = dot[1].padStart(2,'0');
+    const monStr = dot[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const monIdx = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+                    .findIndex(m => monStr.startsWith(m));
+    if (monIdx >= 0) {
+      const year = new Date().getFullYear();
+      return `${year}-${String(monIdx+1).padStart(2,'0')}-${day}`;
+    }
+  }
+
+  // Número serial de Excel (ej. 46xxx)
+  const num = Number(s);
+  if (!isNaN(num) && num > 40000 && num < 60000) {
+    const d = XLSX.SSF.parse_date_code(num);
+    if (d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+
+  return null;
+}
+
+/* ════════════ PARSE KPIs ════════════ */
+function parseKpis(wb) {
   const kpiMap = {};
-  console.log('Pestañas en el archivo:', wb.SheetNames);
+  console.log('[KPIs] pestañas:', wb.SheetNames);
 
   for (const [sheetKey] of Object.entries(SHEET_TO_FORMAT)) {
-    // Buscar la pestaña con nombre exacto o case-insensitive
     const realName = wb.SheetNames.find(n => n.trim().toUpperCase() === sheetKey.toUpperCase())
-                  || wb.SheetNames.find(n => n.trim().toUpperCase().includes(sheetKey.toUpperCase()));
-    if (!realName) { console.warn('Pestaña no encontrada:', sheetKey, '— disponibles:', wb.SheetNames); continue; }
+                  || wb.SheetNames.find(n => n.trim().toUpperCase().includes(sheetKey));
+    if (!realName) { console.warn('[KPIs] pestaña no encontrada:', sheetKey); continue; }
 
     const ws   = wb.Sheets[realName];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
-    if (!rows.length) { console.warn('Pestaña vacía:', realName); continue; }
+    if (!rows.length) continue;
 
-    // Volcar columnas detectadas para debug
-    const rawCols = Object.keys(rows[0]);
-    console.log(`[${realName}] columnas raw: ` + rawCols.join(' | '));
-
-    // Mapear columna normalizada → nombre real
     const colMap = {};
-    for (const k of rawCols) colMap[normCol(k)] = k;
-    console.log(`[${realName}] columnas normalizadas: ` + Object.keys(colMap).join(' | '));
-
+    for (const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
     const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
 
-    const cDET   = col('DET','DTTE');
-    const cVENTA = col('VENTA','VENTAS','VENTA MES','VENTA ($)','Venta 2026');
-    const cELEG  = col('ELEGIBLES','ELEGIBLE','ELEG','Elegibles');
-    const cPLAN  = col('PLAN GE','PLAN_GE','PLANGE','PLAN','Plan GE','Plan G.E.');
-    const cGE    = col('GE','Garantía Extendida','Garantia Extendida','Garantías 2026','Garantias 2026');
-    const cCONV  = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN','CONV.','% Conv','% CONV','Conversión','%Conv');
-    const cVSAA  = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %','vs AA','Cr. vs AA');
+    const cDET  = col('DET');
+    const cVENTA= col('VENTA','VENTAS','VENTA MES');
+    const cELEG = col('ELEGIBLES','ELEGIBLE','ELEG');
+    const cPLAN = col('PLAN GE','PLAN_GE','PLANGE','PLAN');
+    const cGE   = col('GE');
+    const cCONV = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN');
+    const cVSAA = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %');
 
-    console.log(`[${realName}] mapeo → DET:${cDET} VENTA:${cVENTA} ELEG:${cELEG} PLAN:${cPLAN} GE:${cGE} CONV:${cCONV} VSAA:${cVSAA}`);
+    console.log(`[KPIs][${realName}] DET:${cDET} VENTA:${cVENTA} GE:${cGE} PLAN:${cPLAN} ELEG:${cELEG} CONV:${cCONV} VSAA:${cVSAA}`);
 
     for (const row of rows) {
       const det = row[cDET];
       if (isNullish(det)) continue;
       const key = String(det).trim();
-      if (!key || key === 'DET') continue; // saltar fila de encabezado si sheet_to_json la incluye
+      if (!key || key.toUpperCase() === 'DET') continue;
       kpiMap[key] = {
-        venta:     row[cVENTA]  ?? null,
-        vsAA:      row[cVSAA]   ?? null,
-        ge:        row[cGE]     ?? null,
-        planGE:    row[cPLAN]   ?? null,
-        elegibles: row[cELEG]   ?? null,
-        conv:      row[cCONV]   ?? null,
+        venta:     row[cVENTA] ?? null,
+        vsAA:      row[cVSAA]  ?? null,
+        ge:        row[cGE]    ?? null,
+        planGE:    row[cPLAN]  ?? null,
+        elegibles: row[cELEG]  ?? null,
+        conv:      row[cCONV]  ?? null,
       };
     }
   }
-  console.log('KPI map — total registros:', Object.keys(kpiMap).length, '| muestra:', Object.entries(kpiMap).slice(0,2));
+  console.log('[KPIs] total registros:', Object.keys(kpiMap).length);
   return kpiMap;
 }
 
-/* ── RENDER CARDS ────────────────────────────────────────── */
-function dash() { return '<span class="kpi-dash">—</span>'; }
+/* ════════════ FETCH ════════════ */
+async function fetchXlsx(url, label) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`${label}: HTTP ${resp.status}`);
+  const buf = await resp.arrayBuffer();
+  if (buf.byteLength < 500) throw new Error(`${label}: respuesta vacía`);
+  console.log(`[Fetch] ${label} OK — ${buf.byteLength} bytes`);
+  return buf;
+}
 
-function renderCards(stores, kpiMap, dataOk) {
+/* ════════════ STEP UI ════════════ */
+function step(id, state) {
+  const el = document.getElementById(id);
+  if (el) el.className = `step ${state}`;
+}
+
+/* ════════════ RENDER ════════════ */
+function dash() { return '<span class="dash">—</span>'; }
+
+function renderCards(stores, kpiMap, rutasOk, kpisOk) {
   const summaryBar = document.getElementById('summary-bar');
-  const totalCount = document.getElementById('total-count');
   const content    = document.getElementById('main-content');
 
   if (!stores || !stores.length) {
@@ -477,19 +382,19 @@ function renderCards(stores, kpiMap, dataOk) {
       <div class="status-box">
         <div class="icon">📅</div>
         <h2>Sin visitas programadas hoy</h2>
-        <p>No hay tiendas asignadas para esta fecha.<br>Consulta el archivo de rutas.</p>
+        <p>No hay tiendas asignadas para esta fecha en el archivo de rutas.</p>
       </div>`;
     return;
   }
 
   summaryBar.style.display = 'flex';
-  totalCount.textContent   = stores.length;
+  document.getElementById('total-count').textContent = stores.length;
 
   const cards = stores.map((s, i) => {
     const cls    = getFormatClass(s.Formato);
     const icon   = getFormatIcon(s.Formato);
     const segCls = getSegClass(s.Segmentacion);
-    const kpi    = kpiMap[String(s.DET).trim()] || {};
+    const kpi    = kpiMap[s.DET] || {};
 
     const ventaStr = fmtPeso(kpi.venta);
     const vsAAStr  = fmtVsAA(kpi.vsAA);
@@ -499,42 +404,11 @@ function renderCards(stores, kpiMap, dataOk) {
     const elegStr  = fmtInt(kpi.elegibles);
     const convStr  = fmtPct(kpi.conv);
 
-    // KPI 1: Venta / vs AA
-    const kpi1 = `<div class="kpi">
-      <div class="kpi-label">Venta / vs AA</div>
-      <div class="kpi-main">${ventaStr ?? dash()}</div>
-      <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
-    </div>`;
-
-    // KPI 2: GE / Plan GE  (ambos en línea principal como "GE / Plan")
-    const geVal   = geStr   ?? dash();
-    const planVal = planStr ?? dash();
-    const kpi2 = `<div class="kpi">
-      <div class="kpi-label">GE / Plan GE</div>
-      <div class="kpi-main">${geVal}</div>
-      <div class="kpi-sub">${planVal}</div>
-    </div>`;
-
-    // KPI 3: Elegibles / Conv%
-    const kpi3 = `<div class="kpi">
-      <div class="kpi-label">Elegibles / Conv%</div>
-      <div class="kpi-main">${elegStr ?? dash()}</div>
-      <div class="kpi-sub">${convStr ?? dash()}</div>
-    </div>`;
-
-    const rate = calcGeRate(kpi.ge, kpi.planGE);
-    const rateHtml = !rate ? ''
-      : rate.done ? `<span class="ge-rate done">✓</span>`
-      : `<span class="ge-rate">${rate.x}<span class="ge-sep">|</span>${rate.y}</span>`;
-
-    return `<div class="card ${cls}" data-det="${s.DET}">
+    return `<div class="card ${cls}">
       <div class="card-top">
         <div class="order-num">${i+1}</div>
         <div class="card-info">
-          <div class="store-name-row">
-            <div class="store-name">${icon} ${s.Club.trim()}</div>
-            ${rateHtml}
-          </div>
+          <div class="store-name">${icon} ${s.Nombre || s.DET}</div>
           <div class="meta">
             <span class="tag tag-format">${s.Formato}</span>
             <span class="tag tag-det">DET ${s.DET}</span>
@@ -543,130 +417,77 @@ function renderCards(stores, kpiMap, dataOk) {
           <div class="territorial">👤 ${s.Territorial}</div>
         </div>
       </div>
-      <div class="kpis">${kpi1}${kpi2}${kpi3}</div>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Venta / vs AA</div>
+          <div class="kpi-main">${ventaStr ?? dash()}</div>
+          <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">GE / Plan GE</div>
+          <div class="kpi-main">${geStr ?? dash()}</div>
+          <div class="kpi-sub">${planStr ?? dash()}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Elegibles / Conv%</div>
+          <div class="kpi-main">${elegStr ?? dash()}</div>
+          <div class="kpi-sub">${convStr ?? dash()}</div>
+        </div>
+      </div>
     </div>`;
   }).join('');
 
-  const noteClass = dataOk ? '' : 'err';
-  const noteText  = dataOk
-    ? '📊 Datos de ventas cargados desde Google Drive'
-    : '⚠️ No se cargaron datos de ventas. Necesitas conexión a internet para cargar el archivo desde Google Drive.';
+  const notes = [];
+  if (!rutasOk) notes.push('⚠️ Rutas: no se pudo descargar el archivo');
+  if (!kpisOk)  notes.push('⚠️ Ventas: no se pudo descargar el archivo');
+  const noteHtml = notes.length
+    ? `<p class="data-note err">${notes.join(' · ')}</p>`
+    : `<p class="data-note">📊 Datos actualizados al cargar · Fuente: Google Drive</p>`;
 
-  content.innerHTML = `<div class="cards">${cards}</div>
-    <p class="data-note ${noteClass}">${noteText}</p>`;
+  content.innerHTML = `<div class="cards">${cards}</div>${noteHtml}`;
 }
 
-/* ── MAIN ────────────────────────────────────────────────── */
-async function fetchXlsx() {
-  for (const url of XLSX_URLS) {
-    try {
-      console.log('Intentando URL:', url);
-      const resp = await fetch(url + '&t=' + Date.now(), { cache: 'no-store' });
-      if (!resp.ok) { console.warn(`URL falló (${resp.status}):`, url); continue; }
-      const buf = await resp.arrayBuffer();
-      if (buf.byteLength < 1000) { console.warn('Respuesta demasiado pequeña, probando siguiente URL'); continue; }
-      console.log('Descarga OK — bytes:', buf.byteLength, '— URL:', url);
-      return buf;
-    } catch (e) {
-      console.warn('Error en URL:', url, e.message);
-    }
-  }
-  throw new Error('Ninguna URL funcionó');
-}
-
-/* kpiMap global para búsqueda fuera de ruta */
-let globalKpiMap = {};
-
+/* ════════════ MAIN ════════════ */
 async function init() {
   const key = getTodayKey();
   document.getElementById('date-badge').textContent = formatDateNice(key);
-  const stores = VISITAS[key] || [];
 
+  let visitas = {}, kpiMap = {}, rutasOk = false, kpisOk = false;
+
+  // ── 1. Rutas
+  step('step-rutas', 'active');
   try {
-    const buf    = await fetchXlsx();
-    const wb     = XLSX.read(buf, { type: 'array', cellDates: false });
-    globalKpiMap = parseSheets(wb);
-    renderCards(stores, globalKpiMap, true);
-  } catch (err) {
-    console.error('Error cargando xlsx:', err);
-    renderCards(stores, {}, false);
+    const buf = await fetchXlsx(URL_RUTAS, 'Rutas');
+    const wb  = XLSX.read(buf, { type: 'array', raw: false, cellDates: false });
+    visitas   = parseRutas(wb);
+    rutasOk   = true;
+    step('step-rutas', 'done');
+  } catch(e) {
+    console.error('[Rutas] error:', e);
+    step('step-rutas', 'err');
   }
+
+  // ── 2. KPIs
+  step('step-kpis', 'active');
+  try {
+    const buf = await fetchXlsx(URL_KPIS, 'KPIs');
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: false });
+    kpiMap    = parseKpis(wb);
+    kpisOk    = true;
+    step('step-kpis', 'done');
+  } catch(e) {
+    console.error('[KPIs] error:', e);
+    step('step-kpis', 'err');
+  }
+
+  // ── 3. Render
+  step('step-render', 'active');
+  const stores = visitas[key] || [];
+  renderCards(stores, kpiMap, rutasOk, kpisOk);
+  step('step-render', 'done');
 }
 
 init();
-
-function buildSearchCard(det, kpi) {
-  const ventaStr = fmtPeso(kpi.venta);
-  const vsAAStr  = fmtVsAA(kpi.vsAA);
-  const vsAACls  = vsAAClass(kpi.vsAA);
-  const geStr    = fmtInt(kpi.ge);
-  const planStr  = fmtInt(kpi.planGE);
-  const elegStr  = fmtInt(kpi.elegibles);
-  const convStr  = fmtPct(kpi.conv);
-  const rate     = calcGeRate(kpi.ge, kpi.planGE);
-  const rateHtml = !rate ? ''
-    : rate.done ? `<span class="ge-rate done">✓</span>`
-    : `<span class="ge-rate">${rate.x}<span class="ge-sep">|</span>${rate.y}</span>`;
-
-  const kpi1 = `<div class="kpi"><div class="kpi-label">Venta / vs AA</div><div class="kpi-main">${ventaStr ?? dash()}</div><div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div></div>`;
-  const kpi2 = `<div class="kpi"><div class="kpi-label">GE / Plan GE</div><div class="kpi-main">${geStr ?? dash()}</div><div class="kpi-sub">${planStr ?? dash()}</div></div>`;
-  const kpi3 = `<div class="kpi"><div class="kpi-label">Elegibles / Conv%</div><div class="kpi-main">${elegStr ?? dash()}</div><div class="kpi-sub">${convStr ?? dash()}</div></div>`;
-
-  return `<div class="card sams" data-det="${det}" id="search-result-card">
-    <div class="card-top">
-      <div class="order-num">—</div>
-      <div class="card-info">
-        <div class="store-name-row">
-          <div class="store-name">🔍 DET ${det}</div>
-          ${rateHtml}
-        </div>
-        <div class="meta">
-          <span class="tag tag-det">Fuera de ruta hoy</span>
-        </div>
-      </div>
-    </div>
-    <div class="kpis">${kpi1}${kpi2}${kpi3}</div>
-  </div>`;
-}
-
-function filterByDet(val) {
-  const term = val.trim();
-
-  // Limpiar card de búsqueda previa fuera de ruta
-  const prev = document.getElementById('search-result-card');
-  if (prev) prev.remove();
-
-  if (!term) {
-    // Sin término: mostrar todas las cards de ruta
-    document.querySelectorAll('.card').forEach(c => c.style.display = '');
-    return;
-  }
-
-  // Filtrar cards de ruta
-  let found = false;
-  document.querySelectorAll('.card').forEach(card => {
-    const match = card.dataset.det.startsWith(term);
-    card.style.display = match ? '' : 'none';
-    if (match) found = true;
-  });
-
-  // Si no está en la ruta de hoy, buscar en el kpiMap del Excel
-  if (!found) {
-    const kpi = globalKpiMap[term];
-    const cardsEl = document.querySelector('.cards');
-    if (kpi && cardsEl) {
-      cardsEl.insertAdjacentHTML('afterbegin', buildSearchCard(term, kpi));
-    }
-  }
-}
-
-function forceRefresh() {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('spinning');
-  btn.disabled = true;
-  // Recargar limpiando caché del HTML
-  window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
-}
 </script>
 </body>
 </html>
