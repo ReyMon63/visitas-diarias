@@ -324,13 +324,14 @@ function parseKpis(wb) {
     for (const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
     const col = (...aliases) => aliases.map(a => colMap[normCol(a)]).find(v => v !== undefined);
 
-    const cDET  = col('DET');
-    const cVENTA= col('VENTA','VENTAS','VENTA MES');
+    // Aliases cubren los nombres reales de BA, WM y SMC
+    const cDET  = col('DET','DTTE');
+    const cVENTA= col('VENTA','VENTA ($)','VENTA 2026','VENTAS','VENTA MES');
     const cELEG = col('ELEGIBLES','ELEGIBLE','ELEG');
-    const cPLAN = col('PLAN GE','PLAN_GE','PLANGE','PLAN');
-    const cGE   = col('GE');
-    const cCONV = col('CONV%','CONV %','CONV','CONVERSION','CONVERSIÓN');
-    const cVSAA = col('VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA','VS AA %');
+    const cPLAN = col('PLAN GE','PLAN G.E.','PLAN_GE','PLANGE','PLAN');
+    const cGE   = col('GE','GARANTIA EXTENDIDA','GARANTÍAS 2026','GARANTIAS 2026','GARANTIA');
+    const cCONV = col('% CONV','%CONV','CONV%','CONV %','CONVERSION','CONVERSIÓN','CONV');
+    const cVSAA = col('VS AA','CR. VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA');
 
     console.log(`[KPIs][${realName}] DET:${cDET} VENTA:${cVENTA} GE:${cGE} PLAN:${cPLAN} ELEG:${cELEG} CONV:${cCONV} VSAA:${cVSAA}`);
 
