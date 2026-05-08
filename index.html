@@ -929,24 +929,42 @@ async function startScanner() {
     showScanFeedback('Librería no disponible.\nVerifica tu conexión.', 'fb-error');
     return;
   }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showScanFeedback('Cámara no disponible\nen este navegador.', 'fb-error');
+    return;
+  }
   try {
-    scannerReader = new ZXing.BrowserMultiFormatReader();
+    // Pedimos el stream directamente — más confiable en iOS Safari
+    scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
     const videoEl = document.getElementById('scanner-video');
-    await scannerReader.decodeFromVideoDevice(undefined, videoEl, (result, err) => {
+    videoEl.srcObject = scannerStream;
+    await videoEl.play();
+
+    scannerReader = new ZXing.BrowserMultiFormatReader();
+    scannerReader.decodeFromStream(scannerStream, videoEl, (result, err) => {
       if (result && !scanCooldown) handleBarcode(result.getText());
     });
     scannerActive = true;
   } catch(e) {
     console.error('[Scanner]', e);
-    const msg = e.name === 'NotAllowedError'
-      ? 'Permiso de cámara denegado.\nHabilítalo en Configuración.'
-      : 'No se pudo iniciar la cámara.';
-    showScanFeedback(msg, 'fb-error');
+    if (e.name === 'NotAllowedError') {
+      showScanFeedback('Cámara denegada.\nVe a Configuración →\nSafari → Cámara → Permitir', 'fb-error');
+    } else if (e.name === 'NotFoundError') {
+      showScanFeedback('No se encontró\ncámara trasera.', 'fb-error');
+    } else {
+      showScanFeedback('No se pudo iniciar\nla cámara.', 'fb-error');
+    }
   }
 }
 
 function stopScannerClean() {
   if (scannerReader) { try { scannerReader.reset(); } catch {} scannerReader = null; }
+  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+  const videoEl = document.getElementById('scanner-video');
+  if (videoEl) videoEl.srcObject = null;
   scannerActive = false;
   scanCooldown  = false;
 }
