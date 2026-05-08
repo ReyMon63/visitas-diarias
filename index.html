@@ -177,14 +177,14 @@
   .task-icon-btn {
     position: absolute; top: 10px; right: 10px;
     width: 30px; height: 30px; border-radius: 50%;
-    border: none; background: transparent;
+    border: 1px solid #30363d; background: transparent;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: #6e7681;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
     z-index: 1;
   }
-  .task-icon-btn:hover { background: rgba(255,255,255,0.08); color: #c9d1d9; }
-  .task-icon-btn.has-pending { background: #f85149; color: #fff; }
+  .task-icon-btn:hover { background: rgba(255,255,255,0.08); color: #c9d1d9; border-color: #484f58; }
+  .task-icon-btn.has-pending { background: #f85149; border-color: #f85149; color: #fff; }
 
   /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
@@ -902,6 +902,22 @@ function buildCalLink(task, store) {
 }
 
 /* ══════════════════════════════════════════════
+   JSONP HELPER  (evita bloqueo CORS/ITP de Safari)
+══════════════════════════════════════════════ */
+function fetchJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = '_cb' + Date.now() + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    function cleanup() { clearTimeout(timer); delete window[cb]; script.remove(); }
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('script error')); };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(script);
+  });
+}
+
+/* ══════════════════════════════════════════════
    BARCODE SCANNER (ZXing)
 ══════════════════════════════════════════════ */
 async function startScanner() {
@@ -967,8 +983,14 @@ async function handleBarcode(code) {
       }
     } else {
       const checkUrl = `${APPS_SCRIPT_URL}?action=check&code=${encodeURIComponent(code)}`;
-      const data = await fetch(checkUrl).then(r => r.json());
-      if (data.exists) {
+      let isNew = true;
+      try {
+        const data = await fetchJsonp(checkUrl);
+        isNew = !data.exists;
+      } catch(e) {
+        console.warn('[Check error — asumiendo nuevo]', e);
+      }
+      if (!isNew) {
         showScanFeedback(`YA ESTABA\nREGISTRADO\n\n${code}`, 'fb-exists');
       } else {
         const regUrl = `${APPS_SCRIPT_URL}?action=register`
@@ -977,7 +999,7 @@ async function handleBarcode(code) {
           + `&nombre=${encodeURIComponent(currentStore.Nombre || '')}`
           + `&formato=${encodeURIComponent(currentStore.Formato || '')}`
           + `&territorial=${encodeURIComponent(currentStore.Territorial || '')}`;
-        await fetch(regUrl);
+        try { await fetchJsonp(regUrl); } catch(e) { console.warn('[Register error]', e); }
         sessionScanned.add(code);
         scanCount++;
         document.getElementById('scan-counter').textContent = `Registrados: ${scanCount}`;
@@ -985,6 +1007,7 @@ async function handleBarcode(code) {
       }
     }
   } catch(e) {
+    console.error('[Scanner]', e);
     showScanFeedback('ERROR DE\nCONEXIÓN', 'fb-error');
   }
 
@@ -1192,26 +1215,3 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_RUTAS);
     const wb=XLSX.read(buf,{type:'array',raw:false,cellDates:false});
-    allVisitas=parseRutas(wb);
-    rutasOk=true; step('step-rutas','done');
-  } catch(e){ console.error('[Rutas]',e); step('step-rutas','err'); }
-  step('step-kpis','active');
-  try {
-    const buf=await fetchXlsx(URL_KPIS);
-    const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    allKpis=parseKpis(wb);
-    kpisOk=true; step('step-kpis','done');
-  } catch(e){ console.error('[KPIs]',e); step('step-kpis','err'); }
-  step('step-render','active');
-  renderDay(key);
-  step('step-render','done');
-  if(!rutasOk||!kpisOk){
-    const note=document.querySelector('.data-note');
-    if(note){ note.classList.add('err'); note.textContent='⚠️ No se pudo cargar alguno de los archivos de Drive'; }
-  }
-}
-
-init();
-</script>
-</body>
-</html>
