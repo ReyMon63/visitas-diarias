@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visitas del Día</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.1/umd/index.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 0 0 48px; }
@@ -179,12 +179,12 @@
     width: 30px; height: 30px; border-radius: 50%;
     border: none; background: transparent;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 1rem;
-    transition: background 0.2s;
+    cursor: pointer; color: #6e7681;
+    transition: background 0.2s, color 0.2s;
     z-index: 1;
   }
-  .task-icon-btn:hover { background: rgba(255,255,255,0.1); }
-  .task-icon-btn.has-pending { background: #f85149; }
+  .task-icon-btn:hover { background: rgba(255,255,255,0.08); color: #c9d1d9; }
+  .task-icon-btn.has-pending { background: #f85149; color: #fff; }
 
   /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
@@ -909,12 +909,12 @@ async function startScanner() {
   sessionScanned.clear();
   document.getElementById('scan-counter').textContent = 'Registrados: 0';
 
-  if (typeof ZXingBrowser === 'undefined') {
+  if (typeof ZXing === 'undefined') {
     showScanFeedback('Librería no disponible.\nVerifica tu conexión.', 'fb-error');
     return;
   }
   try {
-    scannerReader = new ZXingBrowser.BrowserMultiFormatReader();
+    scannerReader = new ZXing.BrowserMultiFormatReader();
     const videoEl = document.getElementById('scanner-video');
     await scannerReader.decodeFromVideoDevice(undefined, videoEl, (result, err) => {
       if (result && !scanCooldown) handleBarcode(result.getText());
@@ -1016,7 +1016,7 @@ function buildCard(s, i, kpi) {
   const pending = hasPendingTasks(s.DET);
   const taskCls = `task-icon-btn${pending ? ' has-pending' : ''}`;
   return `<div class="card ${cls}">
-    <button class="${taskCls}" onclick="event.stopPropagation();openStoreDetail('${s.DET}')" title="Tareas">📝</button>
+    <button class="${taskCls}" onclick="event.stopPropagation();openStoreDetail('${s.DET}')" title="Tareas"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m3 6 2 2 4-4'/><line x1='11' y1='6' x2='21' y2='6'/><rect x='3' y='11' width='4' height='4' rx='1'/><line x1='11' y1='13' x2='21' y2='13'/><rect x='3' y='17' width='4' height='4' rx='1'/><line x1='11' y1='19' x2='19' y2='19'/></svg></button>
     <div class="card-top">
       ${num}
       <div class="card-info">
