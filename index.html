@@ -711,20 +711,37 @@ function parseKpis(wb) {
     const ws=wb.Sheets[realName];
     const rows=XLSX.utils.sheet_to_json(ws,{defval:null,raw:true});
     if(!rows.length) continue;
-    const colMap={};
-    for(const k of Object.keys(rows[0])) colMap[normCol(k)]=k;
-    const col=(...a)=>a.map(x=>colMap[normCol(x)]).find(v=>v!==undefined);
-    const cDET  = col('DET','DTTE');
-    const cVENTA= col('VENTA','VENTA ($)','VENTA 2026','VENTAS','VENTA MES');
-    const cELEG = col('ELEGIBLES','ELEGIBLE','ELEG');
-    const cPLAN = col('PLAN GE','PLAN G.E.','PLAN_GE','PLANGE','PLAN');
-    const cGE   = col('GE','GARANTIA EXTENDIDA','GARANTÍAS 2026','GARANTIAS 2026','GARANTIA');
-    const cCONV = col('% CONV','%CONV','CONV%','CONV %','CONVERSION','CONVERSIÓN','CONV');
-    const cVSAA = col('VS AA','CR. VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA');
-    for(const row of rows){
-      const det=row[cDET]; if(isNullish(det)) continue;
-      const key=String(det).trim(); if(!key||key.toUpperCase()==='DET'||key.toUpperCase()==='DTTE') continue;
-      kpiMap[key]={ venta:row[cVENTA]??null, vsAA:row[cVSAA]??null, ge:row[cGE]??null, planGE:row[cPLAN]??null, elegibles:row[cELEG]??null, conv:row[cCONV]??null };
+
+    // Detectar si la primera fila tiene encabezados de texto
+    const firstKeys=Object.keys(rows[0]).filter(k=>k&&k.trim()&&k!=='__EMPTY'&&isNaN(Number(k)));
+    const hasHeaders=firstKeys.length>0;
+
+    if(hasHeaders){
+      // Modo normal: mapeo por nombre de columna
+      const colMap={};
+      for(const k of Object.keys(rows[0])) colMap[normCol(k)]=k;
+      const col=(...a)=>a.map(x=>colMap[normCol(x)]).find(v=>v!==undefined);
+      const cDET  = col('DET','DTTE');
+      const cVENTA= col('VENTA','VENTA ($)','VENTA 2026','VENTAS','VENTA MES');
+      const cELEG = col('ELEGIBLES','ELEGIBLE','ELEG');
+      const cPLAN = col('PLAN GE','PLAN G.E.','PLAN_GE','PLANGE','PLAN');
+      const cGE   = col('GE','GARANTIA EXTENDIDA','GARANTÍAS 2026','GARANTIAS 2026','GARANTIA');
+      const cCONV = col('% CONV','%CONV','CONV%','CONV %','CONVERSION','CONVERSIÓN','CONV');
+      const cVSAA = col('VS AA','CR. VS AA','VS AA%','VS_AA','VSAA','VS. AA','VS.AA');
+      for(const row of rows){
+        const det=row[cDET]; if(isNullish(det)) continue;
+        const key=String(det).trim(); if(!key||key.toUpperCase()==='DET'||key.toUpperCase()==='DTTE') continue;
+        kpiMap[key]={ venta:row[cVENTA]??null, vsAA:row[cVSAA]??null, ge:row[cGE]??null, planGE:row[cPLAN]??null, elegibles:row[cELEG]??null, conv:row[cCONV]??null };
+      }
+    } else {
+      // Sin encabezados: mapeo posicional DET|VENTA|GE|PLAN_GE|ELEGIBLES|CONV|VSAA
+      const rawRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+      for(const row of rawRows){
+        if(!row||isNullish(row[0])) continue;
+        const key=String(row[0]).trim();
+        if(!key||isNaN(Number(key))) continue; // saltar filas sin DET numérico
+        kpiMap[key]={ venta:row[1]??null, ge:row[2]??null, planGE:row[3]??null, elegibles:row[4]??null, conv:row[5]??null, vsAA:row[6]??null };
+      }
     }
   }
   return kpiMap;
