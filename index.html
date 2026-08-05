@@ -143,11 +143,11 @@
   .card-top { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px 11px; border-left: 4px solid; }
   .supercenter .card-top { border-color: #0078d4; }
   .bodega      .card-top { border-color: #f0883e; }
-  .sams        .card-top { border-color: #3fb950; }
+  .sams        .card-top { border-color: #001f5b; }
   .order-num { min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
   .supercenter .order-num { background: rgba(0,120,212,0.2); color: #58a6ff; border: 1.5px solid #0078d4; }
   .bodega      .order-num { background: rgba(240,136,62,0.2); color: #f0883e; border: 1.5px solid #f0883e; }
-  .sams        .order-num { background: rgba(63,185,80,0.2);  color: #3fb950; border: 1.5px solid #3fb950; }
+  .sams        .order-num { background: rgba(0,31,91,0.2);    color: #001f5b; border: 1.5px solid #001f5b; }
   .card-info { flex: 1; min-width: 0; }
   .store-name { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
   .meta { display: flex; flex-wrap: wrap; gap: 5px; font-size: 0.75rem; }
@@ -184,6 +184,25 @@
   }
   .task-icon-btn:hover { background: rgba(255,255,255,0.08); color: #c9d1d9; border-color: #484f58; }
   .task-icon-btn.has-pending { background: #f85149; border-color: #f85149; color: #fff; }
+
+  /* ── ESTRELLAS / CRITERIOS / CÍRCULOS ── */
+  .star-row { font-size: 1rem; letter-spacing: 1px; line-height: 1; display: inline-flex; align-items: center; gap: 1px; }
+  .criterios {
+    font-size: 0.68rem; color: #6e7681; margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .month-circles {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 16px 10px;
+    border-top: 1px solid #21262d;
+  }
+  .month-circle {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid; background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; line-height: 1;
+    flex-shrink: 0;
+  }
 
   /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
@@ -465,6 +484,9 @@
     <div class="load-steps">
       <div class="step active" id="step-rutas"><span class="step-icon"></span>Descargando rutas del mes</div>
       <div class="step wait"   id="step-kpis"><span class="step-icon"></span>Descargando datos de ventas</div>
+      <div class="step wait"   id="step-hist-wm"><span class="step-icon"></span>Descargando histórico WM</div>
+      <div class="step wait"   id="step-hist-ba"><span class="step-icon"></span>Descargando histórico BA</div>
+      <div class="step wait"   id="step-hist-sc"><span class="step-icon"></span>Descargando histórico SC</div>
       <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
     </div>
   </div>
@@ -568,10 +590,16 @@
 /* ══════════════════════════════════════════════
    CONFIG
 ══════════════════════════════════════════════ */
-const ID_RUTAS = '1hWnLJAqDxb2uKkJH-t-hyMigndtaFEAb';
-const ID_KPIS  = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
-const URL_RUTAS = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
-const URL_KPIS  = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
+const ID_RUTAS   = '1hWnLJAqDxb2uKkJH-t-hyMigndtaFEAb';
+const ID_KPIS    = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
+const ID_HIST_WM = '1GXMDWPNcYjzqPyfnUiVAA3-4xGePocv6';
+const ID_HIST_BA = '1PV2kxUThRLorn8MlNJwRroXbKfusBBb1';
+const ID_HIST_SC = '12d-2aT8T69z9C9FN0Nh_V9L5pryeQDAT';
+const URL_RUTAS   = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
+const URL_KPIS    = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
+const URL_HIST_WM = `https://docs.google.com/spreadsheets/d/${ID_HIST_WM}/export?format=xlsx`;
+const URL_HIST_BA = `https://docs.google.com/spreadsheets/d/${ID_HIST_BA}/export?format=xlsx`;
+const URL_HIST_SC = `https://docs.google.com/spreadsheets/d/${ID_HIST_SC}/export?format=xlsx`;
 const VISIT_COLS = ['Visita 1','Visita 2','Visita 3','Visita 4','Visita 5'];
 const SHEET_TO_FORMAT = { BA:'Bodega Aurrera', WM:'Supercenter', SMC:"Sam´s" };
 const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -586,9 +614,11 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxq45Lb22h5Uer
 /* ══════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════ */
-let allVisitas  = {};
-let allKpis     = {};
-let activeKey   = '';
+let allVisitas    = {};
+let allKpis       = {};
+let historicoMap  = { WM: {}, BA: {}, SC: {} }; // formato → DET → {e1..e5, meses:[]}
+let historicoMeses = [];                          // etiquetas de los 12 meses (A,S,O…)
+let activeKey     = '';
 let calYear, calMonth;
 
 let storeDataMap   = {};   // DET → store object (para el detail view)
@@ -1072,19 +1102,165 @@ function showScanFeedback(text, cls) {
    RENDER CARD HTML
 ══════════════════════════════════════════════ */
 function getFormatClass(f){f=(f||'').toLowerCase();return f.includes('super')?'supercenter':f.includes('bodega')?'bodega':'sams';}
-function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🛒':f.includes('bodega')?'🏪':'🏢';}
-function getSegClass(s){s=(s||'').toLowerCase();return s.includes('bottom low')?'seg-bottom-low':s.includes('bottom high')?'seg-bottom-high':s.includes('cero')?'seg-cero':s.includes('medium')?'seg-medium':s.includes('top')?'seg-top':'seg-other';}
+function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🏬':f.includes('bodega')?'🏪':'🏢';}
+function getHistoricoKey(f){f=(f||'').toLowerCase();return f.includes('super')?'WM':f.includes('bodega')?'BA':'SC';}
 function dash(){return'<span class="dash">—</span>';}
+
+/* ── HISTORICO: parse estrella individual ── */
+function parseEstrella(v) {
+  if(isNullish(v)) return null;
+  const s = String(v).trim();
+  if(s==='1'||s==='+1') return true;
+  if(s==='0'||s==='-1') return false;
+  const n = Number(v);
+  if(!isNaN(n)) return n > 0;
+  return null;
+}
+
+/* ── HISTORICO: parse un workbook (WM / BA / SC) ── */
+function parseHistorico(wb) {
+  const MES_ABR_IDX = {ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11};
+  const LETRAS_MES  = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+
+  // Filtrar y ordenar hojas por mes (excluir Leyenda, ignorar no-mes)
+  const monthSheets = wb.SheetNames
+    .filter(n => !n.toLowerCase().includes('leyenda'))
+    .map(n => {
+      const m = n.toLowerCase().match(/^([a-z]+)(\d{2})$/);
+      if(!m) return null;
+      const key3 = m[1].substring(0,3);
+      const monIdx = MES_ABR_IDX[key3];
+      if(monIdx===undefined) return null;
+      const year = 2000 + parseInt(m[2]);
+      return { name:n, year, month:monIdx, sortKey:year*12+monIdx };
+    })
+    .filter(Boolean)
+    .sort((a,b) => a.sortKey - b.sortKey);
+
+  const last12 = monthSheets.slice(-12);
+  const mesesLabels = last12.map(s => LETRAS_MES[s.month]);
+
+  // Guardar etiquetas globales si aún no están definidas
+  if(historicoMeses.length === 0 && mesesLabels.length > 0) {
+    historicoMeses = mesesLabels;
+  }
+
+  const detMap = {};
+
+  for(let i = 0; i < last12.length; i++) {
+    const sheet = last12[i];
+    const ws = wb.Sheets[sheet.name];
+    const rows = XLSX.utils.sheet_to_json(ws, {defval:null, raw:true});
+    if(!rows.length) continue;
+
+    const colMap = {};
+    for(const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
+    const col = (...a) => a.map(x => colMap[normCol(x)]).find(v => v!==undefined);
+
+    const cDET     = col('DET');
+    const cE1      = col('E1');
+    const cE2      = col('E2');
+    const cE3      = col('E3');
+    const cE4      = col('E4');
+    const cE5      = col('E5');
+    const cAlcance = col('% ALCANCE A META','ALCANCE A META','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META');
+    const cGE      = col('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
+
+    for(const row of rows) {
+      if(!cDET) continue;
+      const det = row[cDET];
+      if(isNullish(det)) continue;
+      const key = String(det).trim();
+      if(!key || isNaN(Number(key))) continue;
+
+      if(!detMap[key]) detMap[key] = { meses: new Array(last12.length).fill(null) };
+
+      // GE del mes
+      const geNum = cGE && !isNullish(row[cGE]) ? Number(row[cGE]) : null;
+
+      // Alcance a meta del mes (normalizar 0-1 → 0-100)
+      let alcNum = cAlcance && !isNullish(row[cAlcance]) ? Number(row[cAlcance]) : null;
+      if(alcNum !== null && !isNaN(alcNum) && Math.abs(alcNum) < 2 && alcNum !== 0) alcNum *= 100;
+
+      detMap[key].meses[i] = {
+        label:   LETRAS_MES[sheet.month],
+        alcance: (alcNum !== null && isNaN(alcNum)) ? null : alcNum,
+        ge:      (geNum  !== null && isNaN(geNum))  ? null : geNum
+      };
+
+      // Estrellas: leer siempre, el más reciente sobreescribe (iteramos 0→last)
+      const pe1 = parseEstrella(cE1 ? row[cE1] : null);
+      const pe2 = parseEstrella(cE2 ? row[cE2] : null);
+      const pe3 = parseEstrella(cE3 ? row[cE3] : null);
+      const pe4 = parseEstrella(cE4 ? row[cE4] : null);
+      const pe5 = parseEstrella(cE5 ? row[cE5] : null);
+      if(pe1 !== null) detMap[key].e1 = pe1;
+      if(pe2 !== null) detMap[key].e2 = pe2;
+      if(pe3 !== null) detMap[key].e3 = pe3;
+      if(pe4 !== null) detMap[key].e4 = pe4;
+      if(pe5 !== null) detMap[key].e5 = pe5;
+    }
+  }
+  return detMap;
+}
+
+/* ── HISTORICO: helpers para construir HTML de tarjeta ── */
+const CRITERIO_NOMBRES = ['≥12 GE','Sin Decremento','≥Meta Anual','10 meses','Conversión'];
+
+function buildStarsHtml(hd) {
+  if(!hd) return '<span class="star-row" style="color:#484f58">☆☆☆☆☆</span>';
+  const vals = [hd.e1, hd.e2, hd.e3, hd.e4, hd.e5];
+  const html = vals.map(v =>
+    v === true
+      ? `<span style="color:#f0b429">★</span>`
+      : `<span style="color:#484f58">☆</span>`
+  ).join('');
+  return `<span class="star-row">${html}</span>`;
+}
+
+function buildCriteriosHtml(hd) {
+  if(!hd) return '<span style="color:#484f58">— sin clasificación</span>';
+  const vals = [hd.e1, hd.e2, hd.e3, hd.e4, hd.e5];
+  return vals.map((v, i) => {
+    const icono = v === true
+      ? `<span style="color:#3fb950">✓</span>`
+      : `<span style="color:#f85149">✗</span>`;
+    return `${icono} ${CRITERIO_NOMBRES[i]}`;
+  }).join(' · ');
+}
+
+function buildCirclesHtml(hd) {
+  const labels = hd ? hd.meses.map(m => m ? m.label : '·') : historicoMeses;
+  if(!labels.length) return '';
+  const circles = labels.map((label, i) => {
+    let color = '#484f58'; // gris = sin datos
+    if(hd && hd.meses[i]) {
+      const m = hd.meses[i];
+      if(m.ge === 0) {
+        color = '#f85149';                    // rojo: GE cero
+      } else if(m.alcance !== null && m.alcance >= 100) {
+        color = '#3fb950';                    // verde: llegó a meta
+      } else if(m.alcance !== null && m.alcance > 0) {
+        color = '#e6edf3';                    // blanco: tuvo ventas, bajo meta
+      }
+    }
+    return `<div class="month-circle" style="border-color:${color};color:${color}">${label}</div>`;
+  });
+  return `<div class="month-circles">${circles.join('')}</div>`;
+}
 
 function buildCard(s, i, kpi) {
   storeDataMap[s.DET] = s;
-  const cls=getFormatClass(s.Formato), icon=getFormatIcon(s.Formato), segCls=getSegClass(s.Segmentacion);
-  kpi = kpi||{};
-  const ventaStr=fmtPeso(kpi.venta), vsAAStr=fmtVsAA(kpi.vsAA), vsAACls=vsAAClass(kpi.vsAA);
-  const geStr=fmtInt(kpi.ge), planStr=fmtInt(kpi.planGE), elegStr=fmtInt(kpi.elegibles), convStr=fmtPct(kpi.conv);
-  const num = i!=null ? `<div class="order-num">${i+1}</div>` : '';
-  const pending = hasPendingTasks(s.DET);
-  const taskCls = `task-icon-btn${pending ? ' has-pending' : ''}`;
+  const cls  = getFormatClass(s.Formato);
+  const icon = getFormatIcon(s.Formato);
+  const hKey = getHistoricoKey(s.Formato);
+  const hd   = historicoMap[hKey] ? historicoMap[hKey][s.DET] : null;
+  kpi = kpi || {};
+  const ventaStr = fmtPeso(kpi.venta), vsAAStr = fmtVsAA(kpi.vsAA), vsAACls = vsAAClass(kpi.vsAA);
+  const geStr = fmtInt(kpi.ge), planStr = fmtInt(kpi.planGE), elegStr = fmtInt(kpi.elegibles), convStr = fmtPct(kpi.conv);
+  const num      = i != null ? `<div class="order-num">${i+1}</div>` : '';
+  const pending  = hasPendingTasks(s.DET);
+  const taskCls  = `task-icon-btn${pending ? ' has-pending' : ''}`;
   return `<div class="card ${cls}">
     <button class="${taskCls}" onclick="event.stopPropagation();openStoreDetail('${s.DET}')" title="Tareas"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m3 6 2 2 4-4'/><line x1='11' y1='6' x2='21' y2='6'/><rect x='3' y='11' width='4' height='4' rx='1'/><line x1='11' y1='13' x2='21' y2='13'/><rect x='3' y='17' width='4' height='4' rx='1'/><line x1='11' y1='19' x2='19' y2='19'/></svg></button>
     <div class="card-top">
@@ -1094,11 +1270,12 @@ function buildCard(s, i, kpi) {
         <div class="meta">
           <span class="tag tag-format">${s.Formato}</span>
           <span class="tag tag-det">DET ${s.DET}</span>
-          <span class="tag tag-seg ${segCls}">${s.Segmentacion}</span>
+          ${buildStarsHtml(hd)}
         </div>
-        <div class="territorial">👤 ${s.Territorial}</div>
+        <div class="criterios">${buildCriteriosHtml(hd)}</div>
       </div>
     </div>
+    ${buildCirclesHtml(hd)}
     <div class="kpis">
       <div class="kpi"><div class="kpi-label">Venta / vs AA</div><div class="kpi-main">${ventaStr??dash()}</div><div class="kpi-sub ${vsAACls}">${vsAAStr??dash()}</div></div>
       <div class="kpi"><div class="kpi-label">GE / Plan GE</div><div class="kpi-main">${geStr??dash()}</div><div class="kpi-sub">${planStr??dash()}</div></div>
@@ -1226,6 +1403,7 @@ function doRefresh(){
   const btn=document.getElementById('refresh-btn');
   btn.classList.add('spinning');
   allVisitas={}; allKpis={};
+  historicoMap={WM:{},BA:{},SC:{}}; historicoMeses=[];
   init().finally(()=>btn.classList.remove('spinning'));
 }
 
@@ -1259,11 +1437,15 @@ async function init(){
       <div class="load-steps">
         <div class="step active" id="step-rutas"><span class="step-icon"></span>Descargando rutas del mes</div>
         <div class="step wait"   id="step-kpis"><span class="step-icon"></span>Descargando datos de ventas</div>
+        <div class="step wait"   id="step-hist-wm"><span class="step-icon"></span>Descargando histórico WM</div>
+        <div class="step wait"   id="step-hist-ba"><span class="step-icon"></span>Descargando histórico BA</div>
+        <div class="step wait"   id="step-hist-sc"><span class="step-icon"></span>Descargando histórico SC</div>
         <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
       </div>
     </div>`;
   document.getElementById('summary-bar').style.display='none';
   let rutasOk=false, kpisOk=false;
+
   step('step-rutas','active');
   try {
     const buf=await fetchXlsx(URL_RUTAS);
@@ -1271,6 +1453,7 @@ async function init(){
     allVisitas=parseRutas(wb);
     rutasOk=true; step('step-rutas','done');
   } catch(e){ console.error('[Rutas]',e); step('step-rutas','err'); }
+
   step('step-kpis','active');
   try {
     const buf=await fetchXlsx(URL_KPIS);
@@ -1278,6 +1461,31 @@ async function init(){
     allKpis=parseKpis(wb);
     kpisOk=true; step('step-kpis','done');
   } catch(e){ console.error('[KPIs]',e); step('step-kpis','err'); }
+
+  step('step-hist-wm','active');
+  try {
+    const buf=await fetchXlsx(URL_HIST_WM);
+    const wb=XLSX.read(buf,{type:'array',cellDates:false});
+    historicoMap.WM = parseHistorico(wb);
+    step('step-hist-wm','done');
+  } catch(e){ console.error('[Hist WM]',e); step('step-hist-wm','err'); }
+
+  step('step-hist-ba','active');
+  try {
+    const buf=await fetchXlsx(URL_HIST_BA);
+    const wb=XLSX.read(buf,{type:'array',cellDates:false});
+    historicoMap.BA = parseHistorico(wb);
+    step('step-hist-ba','done');
+  } catch(e){ console.error('[Hist BA]',e); step('step-hist-ba','err'); }
+
+  step('step-hist-sc','active');
+  try {
+    const buf=await fetchXlsx(URL_HIST_SC);
+    const wb=XLSX.read(buf,{type:'array',cellDates:false});
+    historicoMap.SC = parseHistorico(wb);
+    step('step-hist-sc','done');
+  } catch(e){ console.error('[Hist SC]',e); step('step-hist-sc','err'); }
+
   step('step-render','active');
   renderDay(key);
   step('step-render','done');
