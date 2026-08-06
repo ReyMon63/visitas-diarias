@@ -141,13 +141,13 @@
   .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; transition: border-color 0.2s; position: relative; }
   .card:hover { border-color: #0078d4; }
   .card-top { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px 11px; border-left: 4px solid; }
-  .supercenter .card-top { border-color: #0078d4; }
+  .supercenter .card-top { border-color: #3fb950; }
   .bodega      .card-top { border-color: #f0883e; }
-  .sams        .card-top { border-color: #001f5b; }
+  .sams        .card-top { border-color: #0078d4; }
   .order-num { min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
-  .supercenter .order-num { background: rgba(0,120,212,0.2); color: #58a6ff; border: 1.5px solid #0078d4; }
-  .bodega      .order-num { background: rgba(240,136,62,0.2); color: #f0883e; border: 1.5px solid #f0883e; }
-  .sams        .order-num { background: rgba(0,31,91,0.2);    color: #001f5b; border: 1.5px solid #001f5b; }
+  .supercenter .order-num { background: rgba(63,185,80,0.2);   color: #3fb950; border: 1.5px solid #3fb950; }
+  .bodega      .order-num { background: rgba(240,136,62,0.2);  color: #f0883e; border: 1.5px solid #f0883e; }
+  .sams        .order-num { background: rgba(0,120,212,0.2);   color: #58a6ff; border: 1.5px solid #0078d4; }
   .card-info { flex: 1; min-width: 0; }
   .store-name { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
   .meta { display: flex; flex-wrap: wrap; gap: 5px; font-size: 0.75rem; }
@@ -1102,7 +1102,7 @@ function showScanFeedback(text, cls) {
    RENDER CARD HTML
 ══════════════════════════════════════════════ */
 function getFormatClass(f){f=(f||'').toLowerCase();return f.includes('super')?'supercenter':f.includes('bodega')?'bodega':'sams';}
-function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🏬':f.includes('bodega')?'🏪':'🏢';}
+function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🏪':f.includes('bodega')?'🛒':'🏢';}
 function getHistoricoKey(f){f=(f||'').toLowerCase();return f.includes('super')?'WM':f.includes('bodega')?'BA':'SC';}
 function dash(){return'<span class="dash">—</span>';}
 
@@ -1119,67 +1119,105 @@ function parseEstrella(v) {
 
 /* ── HISTORICO: parse un workbook (WM / BA / SC) ── */
 function parseHistorico(wb) {
-  const MES_ABR_IDX = {ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11};
-  const LETRAS_MES  = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+  const MES_ABR_IDX = {
+    ene:0, jan:0, enero:0,
+    feb:1, febrero:1,
+    mar:2, marzo:2,
+    abr:3, apr:3, abril:3,
+    may:4, mayo:4,
+    jun:5, junio:5,
+    jul:6, julio:6,
+    ago:7, aug:7, agosto:7,
+    sep:8, sept:8, septiembre:8,
+    oct:9, octubre:9,
+    nov:10, noviembre:10,
+    dic:11, dec:11, diciembre:11
+  };
+  const LETRAS_MES = ['E','F','M','A','M','J','J','A','S','O','N','D'];
 
-  // Filtrar y ordenar hojas por mes (excluir Leyenda, ignorar no-mes)
+  // Filtrar y ordenar hojas por mes — acepta "Ene25", "Ene 25", "ENE25", etc.
   const monthSheets = wb.SheetNames
-    .filter(n => !n.toLowerCase().includes('leyenda'))
+    .filter(n => !n.toLowerCase().includes('leyenda') && !n.toLowerCase().includes('resumen'))
     .map(n => {
-      const m = n.toLowerCase().match(/^([a-z]+)(\d{2})$/);
+      const raw = n.trim().toLowerCase().replace(/\s+/g,'');
+      // patrón: letras + 2 dígitos de año  (ene25, enero25, jan25…)
+      const m = raw.match(/^([a-z]+?)(\d{2})$/);
       if(!m) return null;
-      const key3 = m[1].substring(0,3);
-      const monIdx = MES_ABR_IDX[key3];
-      if(monIdx===undefined) return null;
+      const monKey = m[1];
+      // buscar en el dict exacto o por prefijo de 3 letras
+      let monIdx = MES_ABR_IDX[monKey] ?? MES_ABR_IDX[monKey.substring(0,3)];
+      if(monIdx === undefined) return null;
       const year = 2000 + parseInt(m[2]);
       return { name:n, year, month:monIdx, sortKey:year*12+monIdx };
     })
     .filter(Boolean)
     .sort((a,b) => a.sortKey - b.sortKey);
 
+  console.log('[Hist] Hojas de mes encontradas:', monthSheets.map(s=>s.name));
+
   const last12 = monthSheets.slice(-12);
   const mesesLabels = last12.map(s => LETRAS_MES[s.month]);
-
-  // Guardar etiquetas globales si aún no están definidas
-  if(historicoMeses.length === 0 && mesesLabels.length > 0) {
-    historicoMeses = mesesLabels;
-  }
+  if(historicoMeses.length === 0 && mesesLabels.length > 0) historicoMeses = mesesLabels;
 
   const detMap = {};
 
   for(let i = 0; i < last12.length; i++) {
     const sheet = last12[i];
     const ws = wb.Sheets[sheet.name];
-    const rows = XLSX.utils.sheet_to_json(ws, {defval:null, raw:true});
-    if(!rows.length) continue;
+    // Leer con header:1 primero para detectar la fila real de encabezados
+    const rawRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+    if(!rawRows.length) continue;
 
-    const colMap = {};
-    for(const k of Object.keys(rows[0])) colMap[normCol(k)] = k;
-    const col = (...a) => a.map(x => colMap[normCol(x)]).find(v => v!==undefined);
+    // Buscar fila de encabezados (primera fila con texto en varias celdas)
+    let headerIdx = 0;
+    for(let r = 0; r < Math.min(5, rawRows.length); r++) {
+      const row = rawRows[r] || [];
+      const textCells = row.filter(c => c && typeof c === 'string' && c.trim().length > 0);
+      if(textCells.length >= 3) { headerIdx = r; break; }
+    }
 
-    const cDET     = col('DET');
-    const cE1      = col('E1');
-    const cE2      = col('E2');
-    const cE3      = col('E3');
-    const cE4      = col('E4');
-    const cE5      = col('E5');
-    const cAlcance = col('% ALCANCE A META','ALCANCE A META','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META');
-    const cGE      = col('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
+    const headers = (rawRows[headerIdx] || []).map(h => normCol(String(h||'')));
+    const findCol = (...names) => {
+      for(const name of names) {
+        const n = normCol(name);
+        const idx = headers.indexOf(n);
+        if(idx >= 0) return idx;
+        // búsqueda parcial
+        const pi = headers.findIndex(h => h.includes(n) || n.includes(h));
+        if(pi >= 0) return pi;
+      }
+      return -1;
+    };
 
-    for(const row of rows) {
-      if(!cDET) continue;
-      const det = row[cDET];
-      if(isNullish(det)) continue;
-      const key = String(det).trim();
-      if(!key || isNaN(Number(key))) continue;
+    const iDET     = findCol('DET','DTTE');
+    const iE1      = findCol('E1');
+    const iE2      = findCol('E2');
+    const iE3      = findCol('E3');
+    const iE4      = findCol('E4');
+    const iE5      = findCol('E5');
+    const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
+    const iGE      = findCol('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
+
+    if(i === 0) console.log('[Hist] Hoja:', sheet.name, '| headerIdx:', headerIdx,
+      '| DET col:', iDET, '| E1:', iE1, '| E2:', iE2, '| Alcance:', iAlcance, '| GE:', iGE,
+      '| headers:', headers.slice(0, 15));
+
+    // Iterar filas de datos (después del encabezado)
+    for(let r = headerIdx + 1; r < rawRows.length; r++) {
+      const row = rawRows[r];
+      if(!row || iDET < 0) continue;
+      const detRaw = row[iDET];
+      if(isNullish(detRaw)) continue;
+      const key = String(detRaw).trim();
+      // Saltar filas de encabezado repetido o vacías
+      if(!key || key.toUpperCase() === 'DET' || key.toUpperCase() === 'DTTE') continue;
 
       if(!detMap[key]) detMap[key] = { meses: new Array(last12.length).fill(null) };
 
-      // GE del mes
-      const geNum = cGE && !isNullish(row[cGE]) ? Number(row[cGE]) : null;
+      const geVal  = iGE >= 0 ? row[iGE] : null;
+      const geNum  = isNullish(geVal) ? null : Number(geVal);
 
-      // Alcance a meta del mes (normalizar 0-1 → 0-100)
-      let alcNum = cAlcance && !isNullish(row[cAlcance]) ? Number(row[cAlcance]) : null;
+      let alcNum = (iAlcance >= 0 && !isNullish(row[iAlcance])) ? Number(row[iAlcance]) : null;
       if(alcNum !== null && !isNaN(alcNum) && Math.abs(alcNum) < 2 && alcNum !== 0) alcNum *= 100;
 
       detMap[key].meses[i] = {
@@ -1188,12 +1226,12 @@ function parseHistorico(wb) {
         ge:      (geNum  !== null && isNaN(geNum))  ? null : geNum
       };
 
-      // Estrellas: leer siempre, el más reciente sobreescribe (iteramos 0→last)
-      const pe1 = parseEstrella(cE1 ? row[cE1] : null);
-      const pe2 = parseEstrella(cE2 ? row[cE2] : null);
-      const pe3 = parseEstrella(cE3 ? row[cE3] : null);
-      const pe4 = parseEstrella(cE4 ? row[cE4] : null);
-      const pe5 = parseEstrella(cE5 ? row[cE5] : null);
+      // Estrellas: sobreescribe si hay valor → el más reciente gana
+      const pe1 = parseEstrella(iE1 >= 0 ? row[iE1] : null);
+      const pe2 = parseEstrella(iE2 >= 0 ? row[iE2] : null);
+      const pe3 = parseEstrella(iE3 >= 0 ? row[iE3] : null);
+      const pe4 = parseEstrella(iE4 >= 0 ? row[iE4] : null);
+      const pe5 = parseEstrella(iE5 >= 0 ? row[iE5] : null);
       if(pe1 !== null) detMap[key].e1 = pe1;
       if(pe2 !== null) detMap[key].e2 = pe2;
       if(pe3 !== null) detMap[key].e3 = pe3;
@@ -1201,6 +1239,8 @@ function parseHistorico(wb) {
       if(pe5 !== null) detMap[key].e5 = pe5;
     }
   }
+
+  console.log('[Hist] DETs cargados:', Object.keys(detMap).length, '| muestra:', Object.keys(detMap).slice(0,5));
   return detMap;
 }
 
