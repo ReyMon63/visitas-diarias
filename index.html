@@ -1536,6 +1536,18 @@ async function init(){
     step('step-hist-sc','done');
   } catch(e){ console.error('[Hist SC]',e); step('step-hist-sc','err'); }
 
+  // ── DEBUG TEMPORAL: cruce de DETs de hoy vs cada mapa histórico ──
+  { const hoy = allVisitas[key]||[];
+    let wm=0,ba=0,sc=0,none=0,detsMissing=[];
+    for(const s of hoy){
+      if(historicoMap.WM[s.DET])      wm++;
+      else if(historicoMap.BA[s.DET]) ba++;
+      else if(historicoMap.SC[s.DET]) sc++;
+      else { none++; detsMissing.push(s.DET); }
+    }
+    console.log(`[HistCruce] Total hoy:${hoy.length} WM:${wm} BA:${ba} SC:${sc} sin-match:${none}`,
+                none>0?'sin-match DETs:'+detsMissing.slice(0,5).join(','):'');
+  }
   step('step-render','active');
   renderDay(key);
   step('step-render','done');
