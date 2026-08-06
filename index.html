@@ -1160,8 +1160,6 @@ function parseHistorico(wb) {
     .filter(Boolean)
     .sort((a,b) => a.sortKey - b.sortKey);
 
-  console.log('[Hist] Hojas de mes encontradas:', monthSheets.map(s=>s.name));
-
   const last12 = monthSheets.slice(-12);
   const mesesLabels = last12.map(s => LETRAS_MES[s.month]);
   if(historicoMeses.length === 0 && mesesLabels.length > 0) historicoMeses = mesesLabels;
@@ -1205,10 +1203,6 @@ function parseHistorico(wb) {
     const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','ALCANCE PLAN','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
     const iGE      = findCol('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
 
-    if(i === 0) console.log('[Hist] Hoja:', sheet.name, '| headerIdx:', headerIdx,
-      '| DET col:', iDET, '| E1:', iE1, '| E2:', iE2, '| Alcance:', iAlcance, '| GE:', iGE,
-      '| headers:', headers.slice(0, 15));
-
     // Iterar filas de datos (después del encabezado)
     for(let r = headerIdx + 1; r < rawRows.length; r++) {
       const row = rawRows[r];
@@ -1247,7 +1241,6 @@ function parseHistorico(wb) {
     }
   }
 
-  console.log('[Hist] DETs cargados:', Object.keys(detMap).length, '| muestra:', Object.keys(detMap).slice(0,5));
   return detMap;
 }
 
@@ -1302,7 +1295,6 @@ function buildCard(s, i, kpi) {
   const icon = getFormatIcon(s.Formato);
   const hKey = getHistoricoKey(s.Formato);
   const hd   = historicoMap[hKey] ? historicoMap[hKey][s.DET] : null;
-  if(i===0&&!window._cardLog){window._cardLog=true;console.log('[Card0]',{DET:s.DET,Formato:s.Formato,hKey,hdFound:!!hd,'wmSample':Object.keys(historicoMap.WM||{}).slice(0,3),'baSample':Object.keys(historicoMap.BA||{}).slice(0,3),'scSample':Object.keys(historicoMap.SC||{}).slice(0,3)});}
   kpi = kpi || {};
   const ventaStr = fmtPeso(kpi.venta), vsAAStr = fmtVsAA(kpi.vsAA), vsAACls = vsAAClass(kpi.vsAA);
   const geStr = fmtInt(kpi.ge), planStr = fmtInt(kpi.planGE), elegStr = fmtInt(kpi.elegibles), convStr = fmtPct(kpi.conv);
@@ -1500,10 +1492,6 @@ async function init(){
     const wb=XLSX.read(buf,{type:'array',raw:false,cellDates:false});
     allVisitas=parseRutas(wb);
     rutasOk=true; step('step-rutas','done');
-    // Diagnóstico — eliminar tras verificar
-    { const firstDay=Object.keys(allVisitas).sort()[0];
-      const s0=firstDay&&allVisitas[firstDay][0];
-      if(s0) console.log('[Rutas] Muestra tienda 0:',{DET:s0.DET,Formato:s0.Formato,fmtKey:_fmtKey(s0.Formato)}); }
   } catch(e){ console.error('[Rutas]',e); step('step-rutas','err'); }
 
   step('step-kpis','active');
