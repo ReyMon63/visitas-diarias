@@ -1101,11 +1101,12 @@ function showScanFeedback(text, cls) {
 /* ══════════════════════════════════════════════
    RENDER CARD HTML
 ══════════════════════════════════════════════ */
-/* Detecta formato manejando abreviaciones (WM/BA/SMC) Y nombres completos */
+/* Detecta formato manejando abreviaciones (WM/BA/SMC) Y nombres completos.
+   Bodega va primero: "Walmart Bodega Aurrerá" debe ser BA, no WM. */
 function _fmtKey(f) {
   f = (f||'').trim().toLowerCase();
-  if(f==='wm'  || f.includes('supercenter') || f.includes('super center') || f.includes('walmart')) return 'WM';
   if(f==='ba'  || f.includes('bodega')      || f.includes('aurrera'))                               return 'BA';
+  if(f==='wm'  || f.includes('supercenter') || f.includes('super center') || f.includes('walmart')) return 'WM';
   return 'SC'; // Sam's, SMC, Sam´s, Sam's Club, etc.
 }
 function getFormatClass(f){ const k=_fmtKey(f); return k==='WM'?'supercenter':k==='BA'?'bodega':'sams'; }
