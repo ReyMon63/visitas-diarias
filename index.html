@@ -1101,9 +1101,16 @@ function showScanFeedback(text, cls) {
 /* ══════════════════════════════════════════════
    RENDER CARD HTML
 ══════════════════════════════════════════════ */
-function getFormatClass(f){f=(f||'').toLowerCase();return f.includes('super')?'supercenter':f.includes('bodega')?'bodega':'sams';}
-function getFormatIcon(f){f=(f||'').toLowerCase();return f.includes('super')?'🏪':f.includes('bodega')?'🛒':'🏢';}
-function getHistoricoKey(f){f=(f||'').toLowerCase();return f.includes('super')?'WM':f.includes('bodega')?'BA':'SC';}
+/* Detecta formato manejando abreviaciones (WM/BA/SMC) Y nombres completos */
+function _fmtKey(f) {
+  f = (f||'').trim().toLowerCase();
+  if(f==='wm'  || f.includes('supercenter') || f.includes('super center') || f.includes('walmart')) return 'WM';
+  if(f==='ba'  || f.includes('bodega')      || f.includes('aurrera'))                               return 'BA';
+  return 'SC'; // Sam's, SMC, Sam´s, Sam's Club, etc.
+}
+function getFormatClass(f){ const k=_fmtKey(f); return k==='WM'?'supercenter':k==='BA'?'bodega':'sams'; }
+function getFormatIcon(f) { const k=_fmtKey(f); return k==='WM'?'🏪':k==='BA'?'🛒':'🏢'; }
+function getHistoricoKey(f){ return _fmtKey(f); }
 function dash(){return'<span class="dash">—</span>';}
 
 /* ── HISTORICO: parse estrella individual ── */
@@ -1195,7 +1202,7 @@ function parseHistorico(wb) {
     const iE3      = findCol('E3');
     const iE4      = findCol('E4');
     const iE5      = findCol('E5');
-    const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
+    const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','ALCANCE PLAN','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
     const iGE      = findCol('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
 
     if(i === 0) console.log('[Hist] Hoja:', sheet.name, '| headerIdx:', headerIdx,
@@ -1295,6 +1302,7 @@ function buildCard(s, i, kpi) {
   const icon = getFormatIcon(s.Formato);
   const hKey = getHistoricoKey(s.Formato);
   const hd   = historicoMap[hKey] ? historicoMap[hKey][s.DET] : null;
+  if(i===0&&!window._cardLog){window._cardLog=true;console.log('[Card0]',{DET:s.DET,Formato:s.Formato,hKey,hdFound:!!hd,'wmSample':Object.keys(historicoMap.WM||{}).slice(0,3),'baSample':Object.keys(historicoMap.BA||{}).slice(0,3),'scSample':Object.keys(historicoMap.SC||{}).slice(0,3)});}
   kpi = kpi || {};
   const ventaStr = fmtPeso(kpi.venta), vsAAStr = fmtVsAA(kpi.vsAA), vsAACls = vsAAClass(kpi.vsAA);
   const geStr = fmtInt(kpi.ge), planStr = fmtInt(kpi.planGE), elegStr = fmtInt(kpi.elegibles), convStr = fmtPct(kpi.conv);
@@ -1492,6 +1500,10 @@ async function init(){
     const wb=XLSX.read(buf,{type:'array',raw:false,cellDates:false});
     allVisitas=parseRutas(wb);
     rutasOk=true; step('step-rutas','done');
+    // Diagnóstico — eliminar tras verificar
+    { const firstDay=Object.keys(allVisitas).sort()[0];
+      const s0=firstDay&&allVisitas[firstDay][0];
+      if(s0) console.log('[Rutas] Muestra tienda 0:',{DET:s0.DET,Formato:s0.Formato,fmtKey:_fmtKey(s0.Formato)}); }
   } catch(e){ console.error('[Rutas]',e); step('step-rutas','err'); }
 
   step('step-kpis','active');
