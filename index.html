@@ -647,6 +647,13 @@ function formatShort(k) {
 }
 function isNullish(v) { return v===null||v===undefined||v===''||(typeof v==='number'&&isNaN(v)); }
 function normCol(s) { return String(s||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' '); }
+/* Normaliza DET: "4809.0" \u2192 "4809", "4809.00" \u2192 "4809", "ABC" \u2192 "ABC" */
+function normDET(raw) {
+  const s = String(raw||'').trim();
+  const n = Number(s);
+  if(s !== '' && !isNaN(n) && isFinite(n) && n > 0 && Math.floor(n) === n) return String(Math.floor(n));
+  return s;
+}
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ══════════════════════════════════════════════
@@ -698,7 +705,7 @@ function parseRutas(wb) {
     const entry = {
       Formato:     String(row[cFmt]||'').trim(),
       Territorial: String(row[cTerr]||'').trim(),
-      DET:         String(det).trim(),
+      DET:         normDET(det),
       Nombre:      String(row[cNom]||'').trim(),
       Segmentacion:String(row[cSeg]||'').trim(),
     };
@@ -1210,9 +1217,9 @@ function parseHistorico(wb) {
       if(!row || iDET < 0) continue;
       const detRaw = row[iDET];
       if(isNullish(detRaw)) continue;
-      const key = String(detRaw).trim();
+      const key = normDET(detRaw);
       // Saltar filas de encabezado repetido o vacías
-      if(!key || key.toUpperCase() === 'DET' || key.toUpperCase() === 'DTTE') continue;
+      if(!key || key.toUpperCase() === 'DET' || key.toUpperCase() === 'DET.' || key.toUpperCase() === 'DTTE') continue;
 
       if(!detMap[key]) detMap[key] = { meses: new Array(last12.length).fill(null) };
 
@@ -1545,8 +1552,11 @@ async function init(){
       else if(historicoMap.SC[s.DET]) sc++;
       else { none++; detsMissing.push(s.DET); }
     }
-    console.log(`[HistCruce] Total hoy:${hoy.length} WM:${wm} BA:${ba} SC:${sc} sin-match:${none}`,
-                none>0?'sin-match DETs:'+detsMissing.slice(0,5).join(','):'');
+    const baSample = Object.keys(historicoMap.BA).slice(0,5);
+    const scSample = Object.keys(historicoMap.SC).slice(0,5);
+    console.log(`[HistCruce] Total hoy:${hoy.length} WM:${wm} BA:${ba} SC:${sc} sin-match:${none}`);
+    if(none>0) console.log('[HistCruce] sin-match DETs rutas:',detsMissing.slice(0,8));
+    console.log('[HistCruce] BA muestra hist:',baSample,'SC muestra hist:',scSample);
   }
   step('step-render','active');
   renderDay(key);
