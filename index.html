@@ -1292,10 +1292,19 @@ function buildCirclesHtml(hd) {
 
 function buildCard(s, i, kpi) {
   storeDataMap[s.DET] = s;
-  const cls  = getFormatClass(s.Formato);
-  const icon = getFormatIcon(s.Formato);
-  const hKey = getHistoricoKey(s.Formato);
-  const hd   = historicoMap[hKey] ? historicoMap[hKey][s.DET] : null;
+
+  // Determinar formato desde el campo Formato. Si el DET no se encuentra
+  // en el mapa esperado, buscar en los otros tres (DETs son únicos entre formatos).
+  let fmtKey = _fmtKey(s.Formato);
+  let hd = (historicoMap[fmtKey] || {})[s.DET] ?? null;
+  if(!hd) {
+    const orden = ['WM','BA','SC'];
+    for(const k of orden) {
+      if(historicoMap[k]?.[s.DET]) { hd = historicoMap[k][s.DET]; fmtKey = k; break; }
+    }
+  }
+  const cls  = fmtKey === 'WM' ? 'supercenter' : fmtKey === 'BA' ? 'bodega' : 'sams';
+  const icon = fmtKey === 'WM' ? '🏪'           : fmtKey === 'BA' ? '🛒'    : '🏢';
   kpi = kpi || {};
   const ventaStr = fmtPeso(kpi.venta), vsAAStr = fmtVsAA(kpi.vsAA), vsAACls = vsAAClass(kpi.vsAA);
   const geStr = fmtInt(kpi.ge), planStr = fmtInt(kpi.planGE), elegStr = fmtInt(kpi.elegibles), convStr = fmtPct(kpi.conv);
