@@ -1326,25 +1326,36 @@ function buildCirclesHtml(hd, det) {
     }
     return `<div class="month-circle" data-det="${safedet}" data-midx="${i}"
               style="border-color:${color};color:${color}"
-              onclick="handleCircleTap(this,'${safedet}',${i})">${label}</div>`;
+              onpointerdown="circleDown(this,'${safedet}',${i})"
+              onpointerup="circleUp()" onpointercancel="circleUp()"
+              onpointermove="circleMove()"
+              oncontextmenu="return false">${label}</div>`;
   });
   return `<div class="month-circles">${circles.join('')}</div>`;
 }
 
-/* ── CÍRCULO ACTIVO: doble click activa/desactiva un mes ── */
-const activeCircles = {}; // { det: monthIdx }
-const _dblTap = {};       // detección manual de doble toque (mobile)
+/* ── CÍRCULO ACTIVO: long-press (480 ms) activa/desactiva un mes ── */
+const activeCircles = {};  // { det: monthIdx }
+let   _lpTimer      = null;
+let   _lpMoved      = false;
 
-function handleCircleTap(el, det, midx) {
-  // Doble-tap manual: dos toques/clicks en ≤ 350 ms sobre el mismo elemento
-  const key = det + '_' + midx;
-  const now  = Date.now();
-  if (_dblTap[key] && now - _dblTap[key] < 350) {
-    _dblTap[key] = 0;
+function circleDown(el, det, midx) {
+  _lpMoved = false;
+  _lpTimer = setTimeout(() => {
+    _lpTimer = null;
+    if (_lpMoved) return;            // cancelar si hubo scroll
+    if (navigator.vibrate) navigator.vibrate(30);  // feedback háptico (Android)
     _activateCircle(el, det, midx);
-  } else {
-    _dblTap[key] = now;
-  }
+  }, 480);
+}
+
+function circleUp() {
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+}
+
+function circleMove() {
+  _lpMoved = true;                   // scroll detectado → abortar long-press
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
 }
 
 function _activateCircle(el, det, midx) {
@@ -1358,7 +1369,7 @@ function _activateCircle(el, det, midx) {
     card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
     if (kpisEl) kpisEl.classList.remove('month-active');
   } else {
-    // Otro círculo (o ninguno activo) → desactivar anterior y activar éste
+    // Otro círculo (o ninguno) → apagar anterior, encender éste
     card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
     activeCircles[det] = midx;
     el.classList.add('active');
