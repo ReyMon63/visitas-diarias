@@ -717,6 +717,10 @@ function fmtPct(v) {
   const p=Math.abs(n)<=1.5?n*100:n;
   return p.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 }
+function fmtPctRaw(v) { // muestra el valor tal cual, sin transformación
+  if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
+  return n.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+}
 function fmtVsAA(v) {
   if(isNullish(v))return null; const n=Number(v); if(isNaN(n))return null;
   const p=Math.abs(n)<=1.5?n*100:n;
@@ -1175,7 +1179,7 @@ function parseEstrella(v) {
 }
 
 /* ── HISTORICO: parse un workbook (WM / BA / SC) ── */
-function parseHistorico(wb) {
+function parseHistorico(wb, fmt) {
   const MES_ABR_IDX = {
     ene:0, jan:0, enero:0,
     feb:1, febrero:1,
@@ -1254,10 +1258,36 @@ function parseHistorico(wb) {
     const iE4      = findCol('E4');
     const iE5      = findCol('E5');
     const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','ALCANCE PLAN','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
-    const iGE      = findCol('GARANTIAS EXTENDIDAS','GARANTIA EXTENDIDA','GARANTIAS EXTENDIDA','GARANTIAS','GARANTIA EXTENDIDAS','GE');
-    const iVentas  = findCol('VENTAS','MONTO');
+    // BA: columna "Ventas" = conteo GE, columna "Monto" = pesos.
+    // WM/SC: columna "VENTAS" = pesos, "Garantías Extendidas" = conteo GE.
+    const iGE     = fmt === 'BA'
+      ? findCol('VENTAS')
+      : findCol('GARANTIAS EXTENDIDAS','GARANTIA EXTENDIDA','GARANTIAS EXTENDIDA','GARANTIAS','GARANTIA EXTENDIDAS','GE');
+    const iVentas = fmt === 'BA'
+      ? findCol('MONTO')
+      : findCol('VENTAS','MONTO');
     const iEleg    = findCol('ELEG','ELEGIBLES');
     const iConv    = findCol('CONV.','CONV','CONVERSION');
+
+    // ── MATRIX DIAGNÓSTICO: log de columnas por formato/hoja ──
+    if (i === n - 1) { // sólo última hoja (más reciente) para no saturar consola
+      const colInfo = (idx, label) => idx >= 0 ? `${label}[${idx}]="${headers[idx]}"` : `${label}=N/A`;
+      console.log(
+        `[ColMatrix][${fmt}][${sheet.name}] rawHeaders:`, headers,
+        '\n  ', colInfo(iDET,'DET'), colInfo(iVentas,'VENTAS'), colInfo(iGE,'GE'),
+        colInfo(iAlcance,'ALCANCE'), colInfo(iEleg,'ELEG'), colInfo(iConv,'CONV')
+      );
+      // Muestra la primera fila de datos real para ver valores
+      const sampleRow = rawRows[headerIdx + 1] || [];
+      console.log(`[ColMatrix][${fmt}] primera fila datos:`, {
+        DET:     sampleRow[iDET],
+        VENTAS:  sampleRow[iVentas],
+        GE:      sampleRow[iGE],
+        ALCANCE: sampleRow[iAlcance],
+        ELEG:    sampleRow[iEleg],
+        CONV:    sampleRow[iConv],
+      });
+    }
 
     const inLast12 = i >= last12Offset;
     const mi       = i - last12Offset; // índice en meses[] (sólo válido si inLast12)
@@ -1277,7 +1307,8 @@ function parseHistorico(wb) {
       const geNum   = isNullish(geVal) ? null : Number(geVal);
 
       let alcNum = (iAlcance >= 0 && !isNullish(row[iAlcance])) ? Number(row[iAlcance]) : null;
-      if(alcNum !== null && !isNaN(alcNum) && Math.abs(alcNum) < 2 && alcNum !== 0) alcNum *= 100;
+      if(alcNum !== null && isNaN(alcNum)) alcNum = null;
+      if(alcNum !== null) alcNum *= 100; // ratio decimal → porcentaje
 
       const ventasRaw = iVentas >= 0 ? row[iVentas] : null;
       const ventasNum = isNullish(ventasRaw) ? null : Number(ventasRaw);
@@ -1326,7 +1357,7 @@ function parseHistorico(wb) {
 }
 
 /* ── HISTORICO: helpers para construir HTML de tarjeta ── */
-const CRITERIO_NOMBRES = ['≥12 GE','Sin Decremento','≥Meta Anual','10 meses','Conversión'];
+const CRITERIO_NOMBRES = ['Vende','Crece','Cumple','Constancia','Eficiencia'];
 
 function buildStarsHtml(hd) {
   if(!hd) return '<span class="star-row" style="color:#484f58">☆☆☆☆☆</span>';
@@ -1445,56 +1476,43 @@ function _activateCircle(el, det, midx) {
 function showHistoricoKpis(kpisEl, det, midx) {
   const entry = historicoDataStore[det];
   if (!entry) return;
-  const { hd, fmtKey } = entry;
+  const { hd } = entry;
   if (!hd || !hd.meses[midx]) return;
 
-  // Guardar HTML original antes de la primera sustitución
   if (!kpisEl.dataset.origHtml) kpisEl.dataset.origHtml = kpisEl.innerHTML;
 
   const m    = hd.meses[midx];
-  const prev = hd.byKey?.[m.sortKey - 12] ?? null; // mismo mes, año anterior
+  const prev = hd.byKey?.[m.sortKey - 12] ?? null;
 
-  // SC: en el archivo de Sam's, la columna "VENTAS" contiene el conteo de GE
-  // (no pesos). WM/BA sí tienen ventas en pesos + columna GE separada.
-  const isSC      = fmtKey === 'SC';
-  const geDisplay = isSC ? m.ventas : m.ge;        // GE real del mes
-  const prevGe    = isSC ? prev?.ventas : prev?.ge; // GE del mismo mes año anterior
-
-  // vs AA: para WM/BA compara ventas en pesos; para SC compara GE count
-  const currRef = isSC ? m.ventas    : m.ventas;
-  const prevRef = isSC ? prev?.ventas : prev?.ventas;
+  // vs AA: crecimiento de ventas (pesos) año contra año
   let vsAA = null;
-  if (prevRef != null && prevRef !== 0 && currRef != null) {
-    vsAA = (currRef - prevRef) / Math.abs(prevRef) * 100;
+  if (prev?.ventas != null && prev.ventas !== 0 && m.ventas != null) {
+    vsAA = (m.ventas - prev.ventas) / Math.abs(prev.ventas) * 100;
   }
 
-  const vsAAStr  = fmtVsAA(vsAA);
-  const vsAACls  = vsAAClass(vsAA);
-  const geStr    = fmtInt(geDisplay);
-  const alcStr   = m.alcance   !== null ? fmtPct(m.alcance)   : dash();
-  const elegStr  = fmtInt(m.elegibles);
-  const convStr  = m.conversion !== null ? fmtPct(m.conversion) : dash();
-
-  // Fila 1: WM/BA → Venta pesos / vs AA ; SC → GE / vs AA (vs año anterior)
-  const row1Label = isSC ? 'GE / vs AA'     : 'Venta / vs AA';
-  const row1Main  = isSC ? (geStr ?? dash()) : (fmtPeso(m.ventas) ?? dash());
-  const row1Sub   = `<span class="${vsAACls}">${vsAAStr ?? dash()}</span>`;
+  const vsAAStr = fmtVsAA(vsAA);
+  const vsAACls = vsAAClass(vsAA);
+  const ventaStr = fmtPeso(m.ventas) ?? dash();
+  const geStr    = fmtInt(m.ge)      ?? dash();
+  const alcStr   = fmtPctRaw(m.alcance) ?? dash();
+  const elegStr  = fmtInt(m.elegibles) ?? dash();
+  const convStr  = fmtPctRaw(m.conversion) ?? dash();
 
   kpisEl.innerHTML = `
     <div class="kpi-hist-header">${m.yearMonth}</div>
     <div class="kpi">
-      <div class="kpi-label">${row1Label}</div>
-      <div class="kpi-main">${row1Main}</div>
-      <div class="kpi-sub">${row1Sub}</div>
+      <div class="kpi-label">Venta / vs AA</div>
+      <div class="kpi-main">${ventaStr}</div>
+      <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">${isSC ? 'Alcance%' : 'GE / Alcance%'}</div>
-      <div class="kpi-main">${isSC ? alcStr : (geStr ?? dash())}</div>
-      <div class="kpi-sub">${isSC ? '' : alcStr}</div>
+      <div class="kpi-label">GE / Alcance%</div>
+      <div class="kpi-main">${geStr}</div>
+      <div class="kpi-sub">${alcStr}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Elegibles / Conv%</div>
-      <div class="kpi-main">${elegStr ?? dash()}</div>
+      <div class="kpi-main">${elegStr}</div>
       <div class="kpi-sub">${convStr}</div>
     </div>`;
 }
@@ -1733,7 +1751,7 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_HIST_WM);
     const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    historicoMap.WM = parseHistorico(wb);
+    historicoMap.WM = parseHistorico(wb,'WM');
     step('step-hist-wm','done');
   } catch(e){ console.error('[Hist WM]',e); step('step-hist-wm','err'); }
 
@@ -1741,7 +1759,7 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_HIST_BA);
     const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    historicoMap.BA = parseHistorico(wb);
+    historicoMap.BA = parseHistorico(wb,'BA');
     step('step-hist-ba','done');
   } catch(e){ console.error('[Hist BA]',e); step('step-hist-ba','err'); }
 
@@ -1749,7 +1767,7 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_HIST_SC);
     const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    historicoMap.SC = parseHistorico(wb);
+    historicoMap.SC = parseHistorico(wb,'SC');
     step('step-hist-sc','done');
   } catch(e){ console.error('[Hist SC]',e); step('step-hist-sc','err'); }
 
