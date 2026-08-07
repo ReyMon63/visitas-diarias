@@ -1334,6 +1334,25 @@ function buildCirclesHtml(hd, det) {
   return `<div class="month-circles">${circles.join('')}</div>`;
 }
 
+/* ── FEEDBACK HÁPTICO: Android (vibrate) + iOS (selection trick) ── */
+function hapticTap() {
+  if (navigator.vibrate) { navigator.vibrate(30); return; }
+  // iOS Safari: seleccionar texto brevemente dispara el Taptic Engine
+  try {
+    const el = document.createElement('p');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = 'position:fixed;left:-9999px;top:-9999px;font-size:1px;opacity:0;user-select:text;-webkit-user-select:text;';
+    el.textContent = ' ';
+    document.body.appendChild(el);
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    setTimeout(() => { sel.removeAllRanges(); el.remove(); }, 80);
+  } catch(_) {}
+}
+
 /* ── CÍRCULO ACTIVO: long-press (480 ms) activa/desactiva un mes ── */
 const activeCircles = {};  // { det: monthIdx }
 let   _lpTimer      = null;
@@ -1344,7 +1363,7 @@ function circleDown(el, det, midx) {
   _lpTimer = setTimeout(() => {
     _lpTimer = null;
     if (_lpMoved) return;            // cancelar si hubo scroll
-    if (navigator.vibrate) navigator.vibrate(30);  // feedback háptico (Android)
+    hapticTap();  // feedback háptico Android + iOS
     _activateCircle(el, det, midx);
   }, 480);
 }
