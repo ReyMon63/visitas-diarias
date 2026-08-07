@@ -1326,29 +1326,40 @@ function buildCirclesHtml(hd, det) {
     }
     return `<div class="month-circle" data-det="${safedet}" data-midx="${i}"
               style="border-color:${color};color:${color}"
-              ondblclick="toggleMonthCircle(this,'${safedet}',${i})">${label}</div>`;
+              onclick="handleCircleTap(this,'${safedet}',${i})">${label}</div>`;
   });
   return `<div class="month-circles">${circles.join('')}</div>`;
 }
 
 /* ── CÍRCULO ACTIVO: doble click activa/desactiva un mes ── */
 const activeCircles = {}; // { det: monthIdx }
+const _dblTap = {};       // detección manual de doble toque (mobile)
 
-function toggleMonthCircle(el, det, midx) {
-  const card = el.closest('.card');
+function handleCircleTap(el, det, midx) {
+  // Doble-tap manual: dos toques/clicks en ≤ 350 ms sobre el mismo elemento
+  const key = det + '_' + midx;
+  const now  = Date.now();
+  if (_dblTap[key] && now - _dblTap[key] < 350) {
+    _dblTap[key] = 0;
+    _activateCircle(el, det, midx);
+  } else {
+    _dblTap[key] = now;
+  }
+}
+
+function _activateCircle(el, det, midx) {
+  const card = el.closest('.card[data-det]');
   if (!card) return;
-  const kpisEl   = card.querySelector('.kpis');
-  const allCircs = card.querySelectorAll('.month-circle');
+  const kpisEl = card.querySelector('.kpis');
 
   if (activeCircles[det] === midx) {
-    // Ya estaba activo → desactivar
+    // Mismo círculo → desactivar
     delete activeCircles[det];
-    el.classList.remove('active');
+    card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
     if (kpisEl) kpisEl.classList.remove('month-active');
   } else {
-    // Desactivar el anterior (si existía)
-    allCircs.forEach(c => c.classList.remove('active'));
-    // Activar éste
+    // Otro círculo (o ninguno activo) → desactivar anterior y activar éste
+    card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
     activeCircles[det] = midx;
     el.classList.add('active');
     if (kpisEl) kpisEl.classList.add('month-active');
