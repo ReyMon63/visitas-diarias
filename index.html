@@ -1443,7 +1443,9 @@ function _activateCircle(el, det, midx) {
 
 /* ── KPI HISTÓRICO: muestra datos del mes seleccionado ── */
 function showHistoricoKpis(kpisEl, det, midx) {
-  const hd = historicoDataStore[det];
+  const entry = historicoDataStore[det];
+  if (!entry) return;
+  const { hd, fmtKey } = entry;
   if (!hd || !hd.meses[midx]) return;
 
   // Guardar HTML original antes de la primera sustitución
@@ -1452,31 +1454,43 @@ function showHistoricoKpis(kpisEl, det, midx) {
   const m    = hd.meses[midx];
   const prev = hd.byKey?.[m.sortKey - 12] ?? null; // mismo mes, año anterior
 
-  // vs AA
+  // SC: en el archivo de Sam's, la columna "VENTAS" contiene el conteo de GE
+  // (no pesos). WM/BA sí tienen ventas en pesos + columna GE separada.
+  const isSC      = fmtKey === 'SC';
+  const geDisplay = isSC ? m.ventas : m.ge;        // GE real del mes
+  const prevGe    = isSC ? prev?.ventas : prev?.ge; // GE del mismo mes año anterior
+
+  // vs AA: para WM/BA compara ventas en pesos; para SC compara GE count
+  const currRef = isSC ? m.ventas    : m.ventas;
+  const prevRef = isSC ? prev?.ventas : prev?.ventas;
   let vsAA = null;
-  if (prev?.ventas && m.ventas !== null) {
-    vsAA = prev.ventas !== 0 ? (m.ventas - prev.ventas) / Math.abs(prev.ventas) * 100 : null;
+  if (prevRef != null && prevRef !== 0 && currRef != null) {
+    vsAA = (currRef - prevRef) / Math.abs(prevRef) * 100;
   }
 
-  const ventaStr = fmtPeso(m.ventas);
   const vsAAStr  = fmtVsAA(vsAA);
   const vsAACls  = vsAAClass(vsAA);
-  const geStr    = fmtInt(m.ge);
-  const alcStr   = m.alcance !== null ? fmtPct(m.alcance) : dash();
+  const geStr    = fmtInt(geDisplay);
+  const alcStr   = m.alcance   !== null ? fmtPct(m.alcance)   : dash();
   const elegStr  = fmtInt(m.elegibles);
   const convStr  = m.conversion !== null ? fmtPct(m.conversion) : dash();
+
+  // Fila 1: WM/BA → Venta pesos / vs AA ; SC → GE / vs AA (vs año anterior)
+  const row1Label = isSC ? 'GE / vs AA'     : 'Venta / vs AA';
+  const row1Main  = isSC ? (geStr ?? dash()) : (fmtPeso(m.ventas) ?? dash());
+  const row1Sub   = `<span class="${vsAACls}">${vsAAStr ?? dash()}</span>`;
 
   kpisEl.innerHTML = `
     <div class="kpi-hist-header">${m.yearMonth}</div>
     <div class="kpi">
-      <div class="kpi-label">Venta / vs AA</div>
-      <div class="kpi-main">${ventaStr ?? dash()}</div>
-      <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
+      <div class="kpi-label">${row1Label}</div>
+      <div class="kpi-main">${row1Main}</div>
+      <div class="kpi-sub">${row1Sub}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">GE / Alcance%</div>
-      <div class="kpi-main">${geStr ?? dash()}</div>
-      <div class="kpi-sub">${alcStr}</div>
+      <div class="kpi-label">${isSC ? 'Alcance%' : 'GE / Alcance%'}</div>
+      <div class="kpi-main">${isSC ? alcStr : (geStr ?? dash())}</div>
+      <div class="kpi-sub">${isSC ? '' : alcStr}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Elegibles / Conv%</div>
@@ -1505,7 +1519,7 @@ function buildCard(s, i, kpi) {
       if(historicoMap[k]?.[s.DET]) { hd = historicoMap[k][s.DET]; fmtKey = k; break; }
     }
   }
-  historicoDataStore[s.DET] = hd; // para showHistoricoKpis
+  historicoDataStore[s.DET] = { hd, fmtKey }; // para showHistoricoKpis
   const cls  = fmtKey === 'WM' ? 'supercenter' : fmtKey === 'BA' ? 'bodega' : 'sams';
   const icon = fmtKey === 'WM' ? '🏪'           : fmtKey === 'BA' ? '🛒'    : '🏢';
   kpi = kpi || {};
