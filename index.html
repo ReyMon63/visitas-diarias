@@ -234,6 +234,17 @@
     transition: background 0.25s ease;
   }
   .kpis { transition: background 0.25s ease; }
+  /* Header de mes histórico — ocupa las 3 columnas */
+  .kpi-hist-header {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ffe066;
+    letter-spacing: 0.5px;
+    padding: 5px 0 2px;
+    border-bottom: 1px solid rgba(255,224,102,0.2);
+  }
 
   /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
@@ -1199,20 +1210,24 @@ function parseHistorico(wb) {
     .filter(Boolean)
     .sort((a,b) => a.sortKey - b.sortKey);
 
+  const MESES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const n      = monthSheets.length;
   const last12 = monthSheets.slice(-12);
+  const last12Offset = n - last12.length;
+
   const mesesLabels = last12.map(s => LETRAS_MES[s.month]);
   if(historicoMeses.length === 0 && mesesLabels.length > 0) historicoMeses = mesesLabels;
 
   const detMap = {};
 
-  for(let i = 0; i < last12.length; i++) {
-    const sheet = last12[i];
+  // Procesar TODOS los meses (no sólo los últimos 12) para tener datos de
+  // año anterior disponibles al calcular vs AA al activar un círculo.
+  for(let i = 0; i < n; i++) {
+    const sheet = monthSheets[i];
     const ws = wb.Sheets[sheet.name];
-    // Leer con header:1 primero para detectar la fila real de encabezados
     const rawRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
     if(!rawRows.length) continue;
 
-    // Buscar fila de encabezados (primera fila con texto en varias celdas)
     let headerIdx = 0;
     for(let r = 0; r < Math.min(5, rawRows.length); r++) {
       const row = rawRows[r] || [];
@@ -1226,7 +1241,6 @@ function parseHistorico(wb) {
         const n = normCol(name);
         const idx = headers.indexOf(n);
         if(idx >= 0) return idx;
-        // búsqueda parcial
         const pi = headers.findIndex(h => h.includes(n) || n.includes(h));
         if(pi >= 0) return pi;
       }
@@ -1241,42 +1255,70 @@ function parseHistorico(wb) {
     const iE5      = findCol('E5');
     const iAlcance = findCol('% ALCANCE A META','ALCANCE A META','ALCANCE PLAN','% ALCANCE','ALCANCE','% A META','ALCANCE META','% META','ALCANCE A');
     const iGE      = findCol('GE','GARANTIA EXTENDIDA','GARANTIAS','GARANTIA');
+    const iVentas  = findCol('VENTAS','MONTO');
+    const iEleg    = findCol('ELEG','ELEGIBLES');
+    const iConv    = findCol('CONV.','CONV','CONVERSION');
 
-    // Iterar filas de datos (después del encabezado)
+    const inLast12 = i >= last12Offset;
+    const mi       = i - last12Offset; // índice en meses[] (sólo válido si inLast12)
+
     for(let r = headerIdx + 1; r < rawRows.length; r++) {
       const row = rawRows[r];
       if(!row || iDET < 0) continue;
       const detRaw = row[iDET];
       if(isNullish(detRaw)) continue;
       const key = normDET(detRaw);
-      // Saltar filas de encabezado repetido o vacías
       if(!key || key.toUpperCase() === 'DET' || key.toUpperCase() === 'DET.' || key.toUpperCase() === 'DTTE') continue;
 
-      if(!detMap[key]) detMap[key] = { meses: new Array(last12.length).fill(null) };
+      if(!detMap[key]) detMap[key] = { meses: new Array(last12.length).fill(null), byKey: {} };
 
-      const geVal  = iGE >= 0 ? row[iGE] : null;
-      const geNum  = isNullish(geVal) ? null : Number(geVal);
+      // ── valores numéricos ──
+      const geVal   = iGE >= 0 ? row[iGE] : null;
+      const geNum   = isNullish(geVal) ? null : Number(geVal);
 
       let alcNum = (iAlcance >= 0 && !isNullish(row[iAlcance])) ? Number(row[iAlcance]) : null;
       if(alcNum !== null && !isNaN(alcNum) && Math.abs(alcNum) < 2 && alcNum !== 0) alcNum *= 100;
 
-      detMap[key].meses[i] = {
-        label:   LETRAS_MES[sheet.month],
-        alcance: (alcNum !== null && isNaN(alcNum)) ? null : alcNum,
-        ge:      (geNum  !== null && isNaN(geNum))  ? null : geNum
+      const ventasRaw = iVentas >= 0 ? row[iVentas] : null;
+      const ventasNum = isNullish(ventasRaw) ? null : Number(ventasRaw);
+
+      const elegRaw = iEleg >= 0 ? row[iEleg] : null;
+      const elegNum = isNullish(elegRaw) ? null : Number(elegRaw);
+
+      const convRaw = iConv >= 0 ? row[iConv] : null;
+      let convNum   = isNullish(convRaw) ? null : Number(convRaw);
+      if(convNum !== null && !isNaN(convNum) && Math.abs(convNum) <= 1) convNum *= 100;
+
+      const monthData = {
+        label:      LETRAS_MES[sheet.month],
+        yearMonth:  MESES_SHORT[sheet.month] + ' ' + String(sheet.year).slice(-2),
+        sortKey:    sheet.sortKey,
+        ventas:     (ventasNum !== null && isNaN(ventasNum)) ? null : ventasNum,
+        ge:         (geNum     !== null && isNaN(geNum))     ? null : geNum,
+        alcance:    (alcNum    !== null && isNaN(alcNum))    ? null : alcNum,
+        elegibles:  (elegNum   !== null && isNaN(elegNum))   ? null : elegNum,
+        conversion: (convNum   !== null && isNaN(convNum))   ? null : convNum,
       };
 
-      // Estrellas: sobreescribe si hay valor → el más reciente gana
-      const pe1 = parseEstrella(iE1 >= 0 ? row[iE1] : null);
-      const pe2 = parseEstrella(iE2 >= 0 ? row[iE2] : null);
-      const pe3 = parseEstrella(iE3 >= 0 ? row[iE3] : null);
-      const pe4 = parseEstrella(iE4 >= 0 ? row[iE4] : null);
-      const pe5 = parseEstrella(iE5 >= 0 ? row[iE5] : null);
-      if(pe1 !== null) detMap[key].e1 = pe1;
-      if(pe2 !== null) detMap[key].e2 = pe2;
-      if(pe3 !== null) detMap[key].e3 = pe3;
-      if(pe4 !== null) detMap[key].e4 = pe4;
-      if(pe5 !== null) detMap[key].e5 = pe5;
+      // Guardar en byKey para todos los meses (para consulta vs AA)
+      detMap[key].byKey[sheet.sortKey] = monthData;
+
+      // Guardar en meses[] sólo para los últimos 12 (los círculos)
+      if(inLast12) {
+        detMap[key].meses[mi] = monthData;
+
+        // Estrellas: sobreescribe si hay valor → el más reciente gana
+        const pe1 = parseEstrella(iE1 >= 0 ? row[iE1] : null);
+        const pe2 = parseEstrella(iE2 >= 0 ? row[iE2] : null);
+        const pe3 = parseEstrella(iE3 >= 0 ? row[iE3] : null);
+        const pe4 = parseEstrella(iE4 >= 0 ? row[iE4] : null);
+        const pe5 = parseEstrella(iE5 >= 0 ? row[iE5] : null);
+        if(pe1 !== null) detMap[key].e1 = pe1;
+        if(pe2 !== null) detMap[key].e2 = pe2;
+        if(pe3 !== null) detMap[key].e3 = pe3;
+        if(pe4 !== null) detMap[key].e4 = pe4;
+        if(pe5 !== null) detMap[key].e5 = pe5;
+      }
     }
   }
 
@@ -1353,6 +1395,9 @@ function hapticTap() {
   } catch(_) {}
 }
 
+/* ── HISTORICO DATA STORE: acceso rápido a hd por DET ── */
+const historicoDataStore = {}; // { det: hd }
+
 /* ── CÍRCULO ACTIVO: long-press (480 ms) activa/desactiva un mes ── */
 const activeCircles = {};  // { det: monthIdx }
 let   _lpTimer      = null;
@@ -1386,13 +1431,64 @@ function _activateCircle(el, det, midx) {
     // Mismo círculo → desactivar
     delete activeCircles[det];
     card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
-    if (kpisEl) kpisEl.classList.remove('month-active');
+    if (kpisEl) { kpisEl.classList.remove('month-active'); restoreKpis(kpisEl, det); }
   } else {
     // Otro círculo (o ninguno) → apagar anterior, encender éste
     card.querySelectorAll('.month-circle.active').forEach(c => c.classList.remove('active'));
     activeCircles[det] = midx;
     el.classList.add('active');
-    if (kpisEl) kpisEl.classList.add('month-active');
+    if (kpisEl) { kpisEl.classList.add('month-active'); showHistoricoKpis(kpisEl, det, midx); }
+  }
+}
+
+/* ── KPI HISTÓRICO: muestra datos del mes seleccionado ── */
+function showHistoricoKpis(kpisEl, det, midx) {
+  const hd = historicoDataStore[det];
+  if (!hd || !hd.meses[midx]) return;
+
+  // Guardar HTML original antes de la primera sustitución
+  if (!kpisEl.dataset.origHtml) kpisEl.dataset.origHtml = kpisEl.innerHTML;
+
+  const m    = hd.meses[midx];
+  const prev = hd.byKey?.[m.sortKey - 12] ?? null; // mismo mes, año anterior
+
+  // vs AA
+  let vsAA = null;
+  if (prev?.ventas && m.ventas !== null) {
+    vsAA = prev.ventas !== 0 ? (m.ventas - prev.ventas) / Math.abs(prev.ventas) * 100 : null;
+  }
+
+  const ventaStr = fmtPeso(m.ventas);
+  const vsAAStr  = fmtVsAA(vsAA);
+  const vsAACls  = vsAAClass(vsAA);
+  const geStr    = fmtInt(m.ge);
+  const alcStr   = m.alcance !== null ? fmtPct(m.alcance) : dash();
+  const elegStr  = fmtInt(m.elegibles);
+  const convStr  = m.conversion !== null ? fmtPct(m.conversion) : dash();
+
+  kpisEl.innerHTML = `
+    <div class="kpi-hist-header">${m.yearMonth}</div>
+    <div class="kpi">
+      <div class="kpi-label">Venta / vs AA</div>
+      <div class="kpi-main">${ventaStr ?? dash()}</div>
+      <div class="kpi-sub ${vsAACls}">${vsAAStr ?? dash()}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">GE / Alcance%</div>
+      <div class="kpi-main">${geStr ?? dash()}</div>
+      <div class="kpi-sub">${alcStr}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Elegibles / Conv%</div>
+      <div class="kpi-main">${elegStr ?? dash()}</div>
+      <div class="kpi-sub">${convStr}</div>
+    </div>`;
+}
+
+function restoreKpis(kpisEl, det) {
+  if (kpisEl.dataset.origHtml) {
+    kpisEl.innerHTML = kpisEl.dataset.origHtml;
+    delete kpisEl.dataset.origHtml;
   }
 }
 
@@ -1409,6 +1505,7 @@ function buildCard(s, i, kpi) {
       if(historicoMap[k]?.[s.DET]) { hd = historicoMap[k][s.DET]; fmtKey = k; break; }
     }
   }
+  historicoDataStore[s.DET] = hd; // para showHistoricoKpis
   const cls  = fmtKey === 'WM' ? 'supercenter' : fmtKey === 'BA' ? 'bodega' : 'sams';
   const icon = fmtKey === 'WM' ? '🏪'           : fmtKey === 'BA' ? '🛒'    : '🏢';
   kpi = kpi || {};
