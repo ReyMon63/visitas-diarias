@@ -76,7 +76,7 @@
   .cal-close { margin-top: 14px; width: 100%; background: #21262d; border: 1px solid #30363d; color: #e6edf3; border-radius: 8px; padding: 9px; cursor: pointer; font-size: 0.88rem; }
   .cal-close:hover { background: #30363d; }
 
-  /* ── SUMMARY  BAR ── */
+  /* ── SUMMARY BAR ── */
   .summary {
     background: #161b22; border-bottom: 1px solid #30363d;
     padding: 10px 16px 10px 20px;
@@ -195,6 +195,7 @@
     display: flex; justify-content: space-between; align-items: center;
     padding: 6px 16px 10px;
     border-top: 1px solid #21262d;
+    overflow: visible;
   }
   .month-circle {
     width: 22px; height: 22px; border-radius: 50%;
@@ -202,7 +203,37 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.6rem; font-weight: 700; line-height: 1;
     flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease,
+                border-color 0.2s ease, color 0.2s ease, font-size 0.2s ease;
+    user-select: none;
   }
+  .month-circle.active {
+    width: 36px; height: 36px;
+    font-size: 0.72rem; font-weight: 900;
+    border-color: #ffe066 !important;
+    color: #ffe066 !important;
+    border-width: 2.5px;
+    box-shadow: 0 0 0 3px rgba(255,224,102,0.35),
+                0 0 18px 7px rgba(255,224,102,0.45);
+    z-index: 2;
+  }
+  .month-circle.active::after {
+    content: '▼';
+    position: absolute;
+    bottom: -14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.55rem;
+    color: #ffe066;
+    line-height: 1;
+  }
+  /* Fondo KPI cuando hay un mes activo */
+  .kpis.month-active {
+    background: rgba(110, 0, 0, 0.32);
+    transition: background 0.25s ease;
+  }
+  .kpis { transition: background 0.25s ease; }
 
   /* ── STATUS / LOADING ── */
   .status-box { text-align: center; padding: 50px 24px; color: #8b949e; max-width: 700px; margin: 0 auto; }
@@ -1277,9 +1308,10 @@ function buildCriteriosHtml(hd) {
   }).join(' · ');
 }
 
-function buildCirclesHtml(hd) {
+function buildCirclesHtml(hd, det) {
   const labels = hd ? hd.meses.map(m => m ? m.label : '·') : historicoMeses;
   if(!labels.length) return '';
+  const safedet = String(det||'').replace(/'/g,"\\'");
   const circles = labels.map((label, i) => {
     let color = '#484f58'; // gris = sin datos
     if(hd && hd.meses[i]) {
@@ -1292,9 +1324,35 @@ function buildCirclesHtml(hd) {
         color = '#e6edf3';                    // blanco: tuvo ventas, bajo meta
       }
     }
-    return `<div class="month-circle" style="border-color:${color};color:${color}">${label}</div>`;
+    return `<div class="month-circle" data-det="${safedet}" data-midx="${i}"
+              style="border-color:${color};color:${color}"
+              ondblclick="toggleMonthCircle(this,'${safedet}',${i})">${label}</div>`;
   });
   return `<div class="month-circles">${circles.join('')}</div>`;
+}
+
+/* ── CÍRCULO ACTIVO: doble click activa/desactiva un mes ── */
+const activeCircles = {}; // { det: monthIdx }
+
+function toggleMonthCircle(el, det, midx) {
+  const card = el.closest('.card');
+  if (!card) return;
+  const kpisEl   = card.querySelector('.kpis');
+  const allCircs = card.querySelectorAll('.month-circle');
+
+  if (activeCircles[det] === midx) {
+    // Ya estaba activo → desactivar
+    delete activeCircles[det];
+    el.classList.remove('active');
+    if (kpisEl) kpisEl.classList.remove('month-active');
+  } else {
+    // Desactivar el anterior (si existía)
+    allCircs.forEach(c => c.classList.remove('active'));
+    // Activar éste
+    activeCircles[det] = midx;
+    el.classList.add('active');
+    if (kpisEl) kpisEl.classList.add('month-active');
+  }
 }
 
 function buildCard(s, i, kpi) {
@@ -1318,7 +1376,7 @@ function buildCard(s, i, kpi) {
   const num      = i != null ? `<div class="order-num">${i+1}</div>` : '';
   const pending  = hasPendingTasks(s.DET);
   const taskCls  = `task-icon-btn${pending ? ' has-pending' : ''}`;
-  return `<div class="card ${cls}">
+  return `<div class="card ${cls}" data-det="${s.DET}">
     <button class="${taskCls}" onclick="event.stopPropagation();openStoreDetail('${s.DET}')" title="Tareas"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m3 6 2 2 4-4'/><line x1='11' y1='6' x2='21' y2='6'/><rect x='3' y='11' width='4' height='4' rx='1'/><line x1='11' y1='13' x2='21' y2='13'/><rect x='3' y='17' width='4' height='4' rx='1'/><line x1='11' y1='19' x2='19' y2='19'/></svg></button>
     <div class="card-top">
       ${num}
@@ -1332,7 +1390,7 @@ function buildCard(s, i, kpi) {
         <div class="criterios">${buildCriteriosHtml(hd)}</div>
       </div>
     </div>
-    ${buildCirclesHtml(hd)}
+    ${buildCirclesHtml(hd, s.DET)}
     <div class="kpis">
       <div class="kpi"><div class="kpi-label">Venta / vs AA</div><div class="kpi-main">${ventaStr??dash()}</div><div class="kpi-sub ${vsAACls}">${vsAAStr??dash()}</div></div>
       <div class="kpi"><div class="kpi-label">GE / Plan GE</div><div class="kpi-main">${geStr??dash()}</div><div class="kpi-sub">${planStr??dash()}</div></div>
