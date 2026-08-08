@@ -635,8 +635,8 @@
 const ID_RUTAS   = '1hWnLJAqDxb2uKkJH-t-hyMigndtaFEAb';
 const ID_KPIS    = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
 const ID_HIST_WM = '1GXMDWPNcYjzqPyfnUiVAA3-4xGePocv6';
-const ID_HIST_BA = '1PV2kxUThRLorn8MlNJwRroXbKfusBBb1';
-const ID_HIST_SC = '12d-2aT8T69z9C9FN0Nh_V9L5pryeQDAT';
+const ID_HIST_BA = '12d-2aT8T69z9C9FN0Nh_V9L5pryeQDAT'; // HistricoBAconestrellas.xlsx (Bodega Aurrerá)
+const ID_HIST_SC = '1PV2kxUThRLorn8MlNJwRroXbKfusBBb1'; // HistricoSCconestrellas.xlsx (Sam's Club)
 const URL_RUTAS   = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
 const URL_KPIS    = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
 const URL_HIST_WM = `https://docs.google.com/spreadsheets/d/${ID_HIST_WM}/export?format=xlsx`;
@@ -1739,7 +1739,7 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_HIST_BA);
     const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    historicoMap.BA = parseHistorico(wb,'BA');
+    historicoMap.BA = parseHistorico(wb,'WM'); // Bodega: columnas iguales a WM (VENTAS/$, Garantías Extendidas/GE, PPTO)
     step('step-hist-ba','done');
   } catch(e){ console.error('[Hist BA]',e); step('step-hist-ba','err'); }
 
@@ -1747,7 +1747,7 @@ async function init(){
   try {
     const buf=await fetchXlsx(URL_HIST_SC);
     const wb=XLSX.read(buf,{type:'array',cellDates:false});
-    historicoMap.SC = parseHistorico(wb,'SC');
+    historicoMap.SC = parseHistorico(wb,'BA'); // Sam's: columnas Monto/$, Ventas/GE, PTTO — mismo estilo que el parser 'BA'
     step('step-hist-sc','done');
   } catch(e){ console.error('[Hist SC]',e); step('step-hist-sc','err'); }
 
