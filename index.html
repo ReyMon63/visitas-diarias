@@ -1269,26 +1269,6 @@ function parseHistorico(wb, fmt) {
     const iEleg    = findCol('ELEG','ELEGIBLES');
     const iConv    = findCol('CONV.','CONV','CONVERSION');
 
-    // ── MATRIX DIAGNÓSTICO: log de columnas por formato/hoja ──
-    if (i === n - 1) { // sólo última hoja (más reciente) para no saturar consola
-      const colInfo = (idx, label) => idx >= 0 ? `${label}[${idx}]="${headers[idx]}"` : `${label}=N/A`;
-      console.log(
-        `[ColMatrix][${fmt}][${sheet.name}] rawHeaders:`, headers,
-        '\n  ', colInfo(iDET,'DET'), colInfo(iVentas,'VENTAS'), colInfo(iGE,'GE'),
-        colInfo(iAlcance,'ALCANCE'), colInfo(iEleg,'ELEG'), colInfo(iConv,'CONV')
-      );
-      // Muestra la primera fila de datos real para ver valores
-      const sampleRow = rawRows[headerIdx + 1] || [];
-      console.log(`[ColMatrix][${fmt}] primera fila datos:`, {
-        DET:     sampleRow[iDET],
-        VENTAS:  sampleRow[iVentas],
-        GE:      sampleRow[iGE],
-        ALCANCE: sampleRow[iAlcance],
-        ELEG:    sampleRow[iEleg],
-        CONV:    sampleRow[iConv],
-      });
-    }
-
     const inLast12 = i >= last12Offset;
     const mi       = i - last12Offset; // índice en meses[] (sólo válido si inLast12)
 
