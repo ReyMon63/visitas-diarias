@@ -494,8 +494,39 @@
   }
   .modal-input:focus, .modal-textarea:focus { border-color: #0078d4; }
   .modal-textarea { min-height: 72px; resize: vertical; }
-  .modal-date-row { display: flex; gap: 8px; }
-  .modal-date-row .modal-input { flex: 1; }
+  /* ── date toggle ── */
+  .modal-date-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .modal-date-toggle input[type=checkbox] { accent-color: #0078d4; width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+  .modal-date-toggle span { font-size: 0.84rem; color: #8b949e; }
+  .modal-date-picker { display: none; margin-top: 10px; }
+  .modal-date-picker.open { display: block; }
+  /* ── calendar ── */
+  .cpk { background: #21262d; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .cpk-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .cpk-nav-btn { background: none; border: none; color: #e6edf3; font-size: 1.1rem; cursor: pointer; padding: 3px 11px; border-radius: 6px; transition: background .15s; }
+  .cpk-nav-btn:hover { background: #30363d; }
+  .cpk-title { font-size: 0.88rem; font-weight: 700; color: #e6edf3; }
+  .cpk-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cpk-dow { text-align: center; font-size: 0.63rem; font-weight: 700; color: #484f58; padding: 2px 0 5px; }
+  .cpk-day { text-align: center; font-size: 0.82rem; padding: 7px 2px; border-radius: 7px; cursor: pointer; color: #e6edf3; transition: background .12s; }
+  .cpk-day:hover:not(.cpk-other) { background: #30363d; }
+  .cpk-day.cpk-other { color: #484f58; cursor: default; }
+  .cpk-day.cpk-today { color: #58a6ff; font-weight: 700; }
+  .cpk-day.cpk-sel { background: #0078d4 !important; color: #fff !important; font-weight: 700; }
+  /* ── time drums ── */
+  .tpk { display: flex; align-items: center; justify-content: center; gap: 6px; background: #21262d; border-radius: 10px; padding: 6px 10px; }
+  .tpk-lbl { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #484f58; text-align: center; margin-bottom: 3px; }
+  .tpk-col { display: flex; flex-direction: column; align-items: center; }
+  .tpk-wrap { position: relative; width: 58px; height: 132px; overflow: hidden; border-radius: 8px; }
+  .tpk-wrap::before, .tpk-wrap::after { content: ''; position: absolute; left: 0; right: 0; height: 44px; z-index: 2; pointer-events: none; }
+  .tpk-wrap::before { top: 0; background: linear-gradient(#21262d, transparent); }
+  .tpk-wrap::after  { bottom: 0; background: linear-gradient(transparent, #21262d); }
+  .tpk-line { position: absolute; top: 44px; left: 0; right: 0; height: 44px; border-top: 1px solid #30363d; border-bottom: 1px solid #30363d; z-index: 1; pointer-events: none; }
+  .tpk-drum { height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tpk-drum::-webkit-scrollbar { display: none; }
+  .tpk-pad { height: 44px; }
+  .tpk-item { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 600; color: #e6edf3; scroll-snap-align: center; }
+  .tpk-sep { font-size: 1.3rem; font-weight: 700; color: #8b949e; padding-top: 18px; }
   .modal-footer {
     display: flex; gap: 10px; margin-top: 18px;
   }
@@ -733,10 +764,20 @@
         <textarea class="modal-textarea" id="modal-desc" placeholder="Detalle opcional..."></textarea>
       </div>
       <div class="modal-field">
-        <label class="modal-label">Fecha de entrega</label>
-        <div class="modal-date-row">
-          <input class="modal-input" id="modal-date" type="date" />
-          <input class="modal-input" id="modal-time" type="time" value="09:00" />
+        <label class="modal-date-toggle">
+          <input type="checkbox" id="modal-date-check" onchange="toggleDatePicker(this)">
+          <span>Agregar fecha de entrega</span>
+        </label>
+        <div class="modal-date-picker" id="modal-date-picker">
+          <div class="cpk">
+            <div class="cpk-nav">
+              <button class="cpk-nav-btn" type="button" onclick="cpkNav(-1)">‹</button>
+              <span class="cpk-title" id="cpk-title"></span>
+              <button class="cpk-nav-btn" type="button" onclick="cpkNav(1)">›</button>
+            </div>
+            <div class="cpk-grid" id="cpk-grid"></div>
+          </div>
+          <div class="tpk" id="tpk-area"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1077,14 +1118,118 @@ function buildTaskHTML(t) {
   </div>`;
 }
 
-/* ══════════════════════════════════════════════
-   TASK CRUD
-══════════════════════════════════════════════ */
+/* ── DATE / TIME PICKER ────────────────────── */
+const MESES_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let cpk = { year: 0, month: 0, day: 0 };
+
+function toggleDatePicker(cb) {
+  const el = document.getElementById('modal-date-picker');
+  if (cb.checked) {
+    el.classList.add('open');
+    if (!cpk.year) _initPicker();
+  } else {
+    el.classList.remove('open');
+    cpk.day = 0;
+  }
+}
+
+function _initPicker() {
+  const now = new Date();
+  cpk = { year: now.getFullYear(), month: now.getMonth(), day: 0 };
+  _renderCal();
+  _buildDrums();
+}
+
+function _renderCal() {
+  const { year, month, day } = cpk;
+  const today    = new Date();
+  const firstDow = new Date(year, month, 1).getDay();
+  const dInMon   = new Date(year, month + 1, 0).getDate();
+  const dInPrev  = new Date(year, month, 0).getDate();
+  const DOWS = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+  let h = DOWS.map(d => `<span class="cpk-dow">${d}</span>`).join('');
+  for (let i = 0; i < firstDow; i++)
+    h += `<span class="cpk-day cpk-other">${dInPrev - firstDow + 1 + i}</span>`;
+  for (let d = 1; d <= dInMon; d++) {
+    const isTd  = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const isSel = d === day;
+    const cls   = 'cpk-day' + (isTd ? ' cpk-today' : '') + (isSel ? ' cpk-sel' : '');
+    h += `<span class="${cls}" onclick="cpkPick(${d})">${d}</span>`;
+  }
+  const rem = (firstDow + dInMon) % 7;
+  for (let i = 1; i <= (rem ? 7 - rem : 0); i++)
+    h += `<span class="cpk-day cpk-other">${i}</span>`;
+  document.getElementById('cpk-title').textContent = `${MESES_LONG[month]} ${year}`;
+  document.getElementById('cpk-grid').innerHTML = h;
+}
+
+function cpkNav(dir) {
+  cpk.month += dir;
+  if (cpk.month > 11) { cpk.month = 0; cpk.year++; }
+  if (cpk.month < 0)  { cpk.month = 11; cpk.year--; }
+  _renderCal();
+}
+
+function cpkPick(d) { cpk.day = d; _renderCal(); }
+
+function _buildDrums() {
+  const hours = Array.from({length: 12}, (_, i) => String(i + 1));
+  const mins  = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+  const ampm  = ['AM','PM'];
+  const drum = (id, items) =>
+    `<div class="tpk-col">
+      <div class="tpk-lbl">${id === 'h' ? 'Hora' : id === 'm' ? 'Min' : ''}</div>
+      <div class="tpk-wrap">
+        <div class="tpk-line"></div>
+        <div class="tpk-drum" id="tpk-${id}">
+          <div class="tpk-pad"></div>
+          ${items.map(v => `<div class="tpk-item">${v}</div>`).join('')}
+          <div class="tpk-pad"></div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('tpk-area').innerHTML =
+    drum('h', hours) + '<span class="tpk-sep">:</span>' +
+    drum('m', mins)  + '<div style="width:6px"></div>' +
+    drum('ap', ampm);
+  // default 9:00 AM → h index 8 (=9), m index 0 (=00), ap index 0 (=AM)
+  setTimeout(() => {
+    document.getElementById('tpk-h').scrollTop  = 8 * 44;
+    document.getElementById('tpk-m').scrollTop  = 0;
+    document.getElementById('tpk-ap').scrollTop = 0;
+  }, 40);
+}
+
+function _drumIdx(id) {
+  const el = document.getElementById('tpk-' + id);
+  return el ? Math.min(Math.round(el.scrollTop / 44), el.querySelectorAll('.tpk-item').length - 1) : 0;
+}
+
+function getPickerDate() {
+  if (!cpk.day) return null;
+  return `${cpk.year}-${String(cpk.month + 1).padStart(2,'0')}-${String(cpk.day).padStart(2,'0')}`;
+}
+
+function getPickerTime() {
+  const ih  = _drumIdx('h');   // 0..11 → hour 1..12
+  const im  = _drumIdx('m');   // 0..11 → minute 0..55
+  const iap = _drumIdx('ap');  // 0=AM, 1=PM
+  let h = ih + 1;
+  const m = im * 5;
+  if (iap === 0 && h === 12) h = 0;
+  if (iap === 1 && h !== 12) h += 12;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+/* ── TASK CRUD ────────────────────────────── */
 function openTaskModal() {
   document.getElementById('modal-name').value = '';
   document.getElementById('modal-desc').value = '';
-  document.getElementById('modal-date').value = '';
-  document.getElementById('modal-time').value = '09:00';
+  const cb = document.getElementById('modal-date-check');
+  cb.checked = false;
+  cpk = { year: 0, month: 0, day: 0 };
+  document.getElementById('modal-date-picker').classList.remove('open');
   document.getElementById('task-modal-overlay').classList.add('open');
   setTimeout(() => document.getElementById('modal-name').focus(), 80);
 }
@@ -1097,8 +1242,9 @@ function addTaskFromModal() {
   const text = document.getElementById('modal-name').value.trim();
   if (!text) { document.getElementById('modal-name').focus(); return; }
   const desc    = document.getElementById('modal-desc').value.trim() || null;
-  const dueDate = document.getElementById('modal-date').value || null;
-  const dueTime = dueDate ? (document.getElementById('modal-time').value || null) : null;
+  const hasDate = document.getElementById('modal-date-check').checked;
+  const dueDate = hasDate ? getPickerDate() : null;
+  const dueTime = dueDate ? getPickerTime() : null;
   const task = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     text, desc, done: false,
@@ -1142,9 +1288,14 @@ function parseEval(wb) {
     const h   = rows[hi].map(c => c ? String(c).trim() : '');
     const col = n => h.indexOf(n);
     const iDET = col('Determinante'), iNiv = col('Nivel');
-    const iGE  = col('≥12 GE'),       iCr  = col('Sin Decremento');
-    const iCu  = col('≥Meta Anual'),   iCo  = col('10 meses');
-    const iCv  = col('Conversión'),    iProx = col('Próxima estrella');
+    // Acepta nombres nuevos (Vende/Crece/…) o los originales como fallback
+    const c2 = (a, b) => { const i = col(a); return i >= 0 ? i : col(b); };
+    const iGE  = c2('Vende',      '≥12 GE');
+    const iCr  = c2('Crece',      'Sin Decremento');
+    const iCu  = c2('Cumple',     '≥Meta Anual');
+    const iCo  = c2('Constancia', '10 meses');
+    const iCv  = c2('Eficiencia', 'Conversión');
+    const iProx = col('Próxima estrella');
     const iComo = col('Cómo lograrla');
     for (let r = hi + 1; r < rows.length; r++) {
       const row = rows[r];
