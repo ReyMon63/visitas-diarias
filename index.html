@@ -400,6 +400,118 @@
   }
   .task-date-input:focus { border-color: #0078d4; }
 
+  /* ── EVAL / ESTRELLAS ── */
+  .eval-section {
+    flex-shrink: 0; padding: 14px 16px 0;
+    border-bottom: 1px solid #21262d;
+  }
+  .eval-nivel {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: #8b949e; margin-bottom: 8px;
+  }
+  .eval-nivel span { color: #f0c040; letter-spacing: .02em; }
+  .star-grid {
+    display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .star-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 20px; font-size: 0.76rem;
+    font-weight: 700; border: 1px solid; white-space: nowrap;
+  }
+  .star-chip.ok  { background: rgba(63,185,80,.12); border-color: rgba(63,185,80,.35); color: #3fb950; }
+  .star-chip.nok { background: rgba(248,81,73,.08);  border-color: rgba(248,81,73,.25);  color: #f85149; }
+  .star-chip .chip-icon { font-size: 0.85rem; }
+
+  .recom-box {
+    margin-bottom: 13px; padding: 10px 13px;
+    background: rgba(240,192,64,.07); border: 1px solid rgba(240,192,64,.25);
+    border-radius: 10px; font-size: 0.82rem; line-height: 1.5; color: #e6edf3;
+  }
+  .recom-box strong { color: #f0c040; }
+  .recom-none { color: #3fb950; font-size: 0.82rem; text-align: center;
+    padding: 8px; background: rgba(63,185,80,.07); border: 1px solid rgba(63,185,80,.2);
+    border-radius: 10px; margin-bottom: 13px; }
+  .eval-missing { color: #484f58; font-size: 0.8rem; text-align: center;
+    padding: 10px; margin-bottom: 8px; }
+
+  /* ── TASK BAR (nueva barra superior de tareas) ── */
+  .task-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; background: #161b22;
+    border-bottom: 1px solid #21262d; flex-shrink: 0;
+  }
+  .new-task-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: #238636; border: 1px solid #2ea043; border-radius: 8px;
+    padding: 7px 13px; color: #fff; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap; transition: background .2s;
+  }
+  .new-task-btn:hover { background: #2ea043; }
+  .new-task-btn svg { flex-shrink: 0; }
+  .task-filter-select {
+    margin-left: auto; background: #21262d; border: 1px solid #30363d;
+    border-radius: 8px; padding: 6px 10px; color: #e6edf3;
+    font-size: 0.8rem; cursor: pointer; outline: none;
+  }
+  .task-filter-select:focus { border-color: #0078d4; }
+
+  /* ── TASK DESCRIPTION ── */
+  .task-desc { font-size: 0.78rem; color: #8b949e; margin-top: 3px; line-height: 1.4; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.65); align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 480px; padding: 20px 20px 32px;
+    animation: slideUp .22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; color: #e6edf3; }
+  .modal-close {
+    background: none; border: none; color: #8b949e; font-size: 1.2rem;
+    cursor: pointer; padding: 2px 6px; border-radius: 6px;
+    transition: background .2s, color .2s;
+  }
+  .modal-close:hover { background: #21262d; color: #e6edf3; }
+  .modal-field { margin-bottom: 13px; }
+  .modal-label {
+    display: block; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: #8b949e; margin-bottom: 5px;
+  }
+  .modal-input, .modal-textarea {
+    width: 100%; background: #21262d; border: 1px solid #30363d;
+    border-radius: 10px; padding: 10px 13px; color: #e6edf3;
+    font-size: 0.9rem; outline: none; font-family: inherit;
+  }
+  .modal-input:focus, .modal-textarea:focus { border-color: #0078d4; }
+  .modal-textarea { min-height: 72px; resize: vertical; }
+  .modal-date-row { display: flex; gap: 8px; }
+  .modal-date-row .modal-input { flex: 1; }
+  .modal-footer {
+    display: flex; gap: 10px; margin-top: 18px;
+  }
+  .modal-cancel {
+    flex: 1; background: #21262d; border: 1px solid #30363d; border-radius: 10px;
+    padding: 11px; color: #e6edf3; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: background .2s;
+  }
+  .modal-cancel:hover { background: #2d333b; }
+  .modal-save {
+    flex: 2; background: #238636; border: 1px solid #2ea043; border-radius: 10px;
+    padding: 11px; color: #fff; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: background .2s;
+  }
+  .modal-save:hover { background: #2ea043; }
+
   /* ── NO APLICA PANEL ── */
   #panel-noapl {
     flex: 1; display: flex; flex-direction: column;
@@ -529,6 +641,7 @@
       <div class="step wait"   id="step-hist-wm"><span class="step-icon"></span>Descargando histórico WM</div>
       <div class="step wait"   id="step-hist-ba"><span class="step-icon"></span>Descargando histórico BA</div>
       <div class="step wait"   id="step-hist-sc"><span class="step-icon"></span>Descargando histórico SC</div>
+      <div class="step wait"   id="step-eval"><span class="step-icon"></span>Cargando evaluación de tiendas</div>
       <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
     </div>
   </div>
@@ -581,32 +694,54 @@
   </div>
 
   <div class="detail-tabs">
-    <button class="tab-btn active" id="tab-btn-tareas" onclick="switchTab('tareas')">📋 Tareas</button>
+    <button class="tab-btn active" id="tab-btn-tareas" onclick="switchTab('tareas')">📋 Acciones</button>
     <button class="tab-btn"        id="tab-btn-noapl"  onclick="switchTab('noapl')">🚫 No Aplica</button>
   </div>
 
-  <!-- TAREAS PANEL -->
+  <!-- ACCIONES PANEL -->
   <div id="panel-tareas">
-    <div class="task-filter-bar">
-      <button class="filter-chip active" id="chip-all"     onclick="setTaskFilter('all')">Todas</button>
-      <button class="filter-chip"        id="chip-pending" onclick="setTaskFilter('pending')">Pendientes</button>
-      <button class="filter-chip"        id="chip-done"    onclick="setTaskFilter('done')">Completadas</button>
+    <!-- Sección evaluación estrellas -->
+    <div class="eval-section" id="eval-section"></div>
+    <!-- Barra superior de tareas -->
+    <div class="task-bar">
+      <button class="new-task-btn" onclick="openTaskModal()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+        Nueva Acción
+      </button>
+      <select class="task-filter-select" id="task-filter-select" onchange="setTaskFilter(this.value)">
+        <option value="all">Todas</option>
+        <option value="pending">Pendientes</option>
+        <option value="done">Completadas</option>
+      </select>
     </div>
     <div class="task-list-wrap" id="task-list-wrap"></div>
-    <div class="add-task-form">
-      <div class="add-task-row">
-        <input class="task-input" id="task-input" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()" />
-        <button class="add-task-btn" onclick="addTask()">✓ Agregar</button>
+  </div>
+
+  <!-- MODAL NUEVA ACCIÓN -->
+  <div class="modal-overlay" id="task-modal-overlay" onclick="if(event.target===this)closeTaskModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Nueva Acción</h3>
+        <button class="modal-close" onclick="closeTaskModal()">✕</button>
       </div>
-      <div class="task-date-row">
-        <label class="date-toggle-label">
-          <input type="checkbox" id="task-date-enabled" onchange="toggleTaskDate(this)" />
-          <span>📅 Agregar fecha</span>
-        </label>
-        <div class="task-date-fields" id="task-date-fields">
-          <input type="date" class="task-date-input" id="task-date-val" />
-          <input type="time" class="task-date-input" id="task-time-val" value="09:00" />
+      <div class="modal-field">
+        <label class="modal-label">Nombre *</label>
+        <input class="modal-input" id="modal-name" type="text" placeholder="¿Qué hay que hacer?" />
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Descripción</label>
+        <textarea class="modal-textarea" id="modal-desc" placeholder="Detalle opcional..."></textarea>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Fecha de entrega</label>
+        <div class="modal-date-row">
+          <input class="modal-input" id="modal-date" type="date" />
+          <input class="modal-input" id="modal-time" type="time" value="09:00" />
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel" onclick="closeTaskModal()">Cancelar</button>
+        <button class="modal-save"   onclick="addTaskFromModal()">Guardar</button>
       </div>
     </div>
   </div>
@@ -637,11 +772,13 @@ const ID_KPIS    = '1WWTdmMMRq_mPXl6-xd32ZF5P3-GVFrrY';
 const ID_HIST_WM = '1GXMDWPNcYjzqPyfnUiVAA3-4xGePocv6';
 const ID_HIST_BA = '12d-2aT8T69z9C9FN0Nh_V9L5pryeQDAT'; // HistricoBAconestrellas.xlsx (Bodega Aurrerá)
 const ID_HIST_SC = '1PV2kxUThRLorn8MlNJwRroXbKfusBBb1'; // HistricoSCconestrellas.xlsx (Sam's Club)
+const ID_EVAL    = '1aRP7teKhL2dYvgk2M8cOb8_kU5xzRUPf'; // EvaluaciónTiendas.xlsx
 const URL_RUTAS   = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
 const URL_KPIS    = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
 const URL_HIST_WM = `https://docs.google.com/spreadsheets/d/${ID_HIST_WM}/export?format=xlsx`;
 const URL_HIST_BA = `https://docs.google.com/spreadsheets/d/${ID_HIST_BA}/export?format=xlsx`;
 const URL_HIST_SC = `https://docs.google.com/spreadsheets/d/${ID_HIST_SC}/export?format=xlsx`;
+const URL_EVAL    = `https://docs.google.com/spreadsheets/d/${ID_EVAL}/export?format=xlsx`;
 const VISIT_COLS = ['Visita 1','Visita 2','Visita 3','Visita 4','Visita 5'];
 const SHEET_TO_FORMAT = { BA:'Bodega Aurrera', WM:'Supercenter', SMC:"Sam´s" };
 const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -659,6 +796,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxq45Lb22h5Uer
 let allVisitas    = {};
 let allKpis       = {};
 let historicoMap  = { WM: {}, BA: {}, SC: {} }; // formato → DET → {e1..e5, meses:[]}
+let evalMap       = { WM: {}, BA: {}, SC: {} }; // formato → DET → {nivel,ge,crece,cumple,const_,conv,proxima,como}
 let historicoMeses = [];                          // etiquetas de los 12 meses (A,S,O…)
 let activeKey     = '';
 let calYear, calMonth;
@@ -857,7 +995,10 @@ function openStoreDetail(det) {
     `${getFormatIcon(store.Formato)} ${store.Nombre || store.DET}`;
   document.getElementById('detail-store-sub').textContent =
     `DET ${store.DET} · ${store.Formato} · ${store.Territorial}`;
+  const sel = document.getElementById('task-filter-select');
+  if (sel) sel.value = 'all';
   document.getElementById('store-detail-view').style.display = 'flex';
+  renderEvalSection(store);
   switchTab('tareas');
 }
 
@@ -889,9 +1030,6 @@ function switchTab(tab) {
 ══════════════════════════════════════════════ */
 function setTaskFilter(f) {
   taskFilter = f;
-  ['all','pending','done'].forEach(k => {
-    document.getElementById(`chip-${k}`).classList.toggle('active', k === f);
-  });
   renderTaskList();
 }
 
@@ -916,6 +1054,7 @@ function renderTaskList() {
 function buildTaskHTML(t) {
   const checkCls = t.done ? 'task-check checked' : 'task-check';
   const textCls  = t.done ? 'task-text-label done-text' : 'task-text-label';
+  const descHtml = t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : '';
   let dueRow = '';
   if (t.dueDate) {
     const [y,m,d] = t.dueDate.split('-').map(Number);
@@ -931,6 +1070,7 @@ function buildTaskHTML(t) {
     <div class="${checkCls}" onclick="toggleTask('${t.id}')"></div>
     <div class="task-body">
       <div class="${textCls}">${escHtml(t.text)}</div>
+      ${descHtml}
       ${dueRow}
     </div>
     <button class="task-del" onclick="deleteTask('${t.id}')" title="Eliminar">✕</button>
@@ -940,26 +1080,35 @@ function buildTaskHTML(t) {
 /* ══════════════════════════════════════════════
    TASK CRUD
 ══════════════════════════════════════════════ */
-function addTask() {
-  const input = document.getElementById('task-input');
-  const text  = input.value.trim();
-  if (!text) return;
-  const dateEnabled = document.getElementById('task-date-enabled').checked;
-  const dueDate = dateEnabled ? (document.getElementById('task-date-val').value || null) : null;
-  const dueTime = dateEnabled ? (document.getElementById('task-time-val').value || null) : null;
+function openTaskModal() {
+  document.getElementById('modal-name').value = '';
+  document.getElementById('modal-desc').value = '';
+  document.getElementById('modal-date').value = '';
+  document.getElementById('modal-time').value = '09:00';
+  document.getElementById('task-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('modal-name').focus(), 80);
+}
+
+function closeTaskModal() {
+  document.getElementById('task-modal-overlay').classList.remove('open');
+}
+
+function addTaskFromModal() {
+  const text = document.getElementById('modal-name').value.trim();
+  if (!text) { document.getElementById('modal-name').focus(); return; }
+  const desc    = document.getElementById('modal-desc').value.trim() || null;
+  const dueDate = document.getElementById('modal-date').value || null;
+  const dueTime = dueDate ? (document.getElementById('modal-time').value || null) : null;
   const task = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-    text, done: false,
+    text, desc, done: false,
     createdAt: new Date().toISOString(),
     dueDate, dueTime
   };
   const tasks = getTasks(currentStore.DET);
   tasks.push(task);
   saveTasks(currentStore.DET, tasks);
-  input.value = '';
-  const cb = document.getElementById('task-date-enabled');
-  cb.checked = false;
-  toggleTaskDate(cb);
+  closeTaskModal();
   renderTaskList();
 }
 
@@ -977,14 +1126,84 @@ function deleteTask(id) {
   renderTaskList();
 }
 
-function toggleTaskDate(cb) {
-  const fields = document.getElementById('task-date-fields');
-  fields.classList.toggle('visible', cb.checked);
-  if (cb.checked) {
-    const t = new Date();
-    document.getElementById('task-date-val').value =
-      `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+/* ══════════════════════════════════════════════
+   EVALUACIÓN TIENDAS — PARSE & RENDER
+══════════════════════════════════════════════ */
+function parseEval(wb) {
+  const sheetMap = { 'Walmart': 'WM', 'Bodega Aurrerá': 'BA', "Sam's Club": 'SC' };
+  const result   = { WM: {}, BA: {}, SC: {} };
+  for (const [sheetName, fmtKey] of Object.entries(sheetMap)) {
+    if (!wb.Sheets[sheetName]) continue;
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: null });
+    let hi = 0;
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      if (rows[i].filter(c => c && typeof c === 'string').length >= 5) { hi = i; break; }
+    }
+    const h   = rows[hi].map(c => c ? String(c).trim() : '');
+    const col = n => h.indexOf(n);
+    const iDET = col('Determinante'), iNiv = col('Nivel');
+    const iGE  = col('≥12 GE'),       iCr  = col('Sin Decremento');
+    const iCu  = col('≥Meta Anual'),   iCo  = col('10 meses');
+    const iCv  = col('Conversión'),    iProx = col('Próxima estrella');
+    const iComo = col('Cómo lograrla');
+    for (let r = hi + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row[iDET]) continue;
+      result[fmtKey][String(row[iDET])] = {
+        nivel:   row[iNiv],
+        ge:      row[iGE]  === '✓',
+        crece:   row[iCr]  === '✓',
+        cumple:  row[iCu]  === '✓',
+        const_:  row[iCo]  === '✓',
+        conv:    row[iCv]  === '✓',
+        proxima: row[iProx] || null,
+        como:    row[iComo] || null,
+      };
+    }
   }
+  return result;
+}
+
+function renderEvalSection(store) {
+  const el = document.getElementById('eval-section');
+  if (!el) return;
+  const fmtKey = _fmtKey(store.Formato);
+  const ev = (evalMap[fmtKey] || {})[store.DET];
+
+  if (!ev) {
+    el.innerHTML = `<p class="eval-missing">Sin datos de evaluación para esta tienda</p>`;
+    return;
+  }
+
+  const STARS = [
+    { key: 'ge',     label: 'Vende',      ok: ev.ge     },
+    { key: 'crece',  label: 'Crece',      ok: ev.crece  },
+    { key: 'cumple', label: 'Cumple',      ok: ev.cumple },
+    { key: 'const_', label: 'Constancia', ok: ev.const_ },
+    { key: 'conv',   label: 'Eficiencia', ok: ev.conv   },
+  ];
+  const nivel = ev.nivel ?? 0;
+  const stars = '★'.repeat(nivel) + '☆'.repeat(5 - nivel);
+
+  const chipsHtml = STARS.map(s =>
+    `<span class="star-chip ${s.ok ? 'ok' : 'nok'}">
+      <span class="chip-icon">${s.ok ? '✓' : '✗'}</span>${s.label}
+    </span>`
+  ).join('');
+
+  let recomHtml = '';
+  if (ev.proxima && ev.proxima !== '—') {
+    recomHtml = `<div class="recom-box">
+      La siguiente estrella más fácil de lograr es <strong>${ev.proxima}</strong> — ${ev.como || ''}
+    </div>`;
+  } else if (nivel === 5) {
+    recomHtml = `<div class="recom-none">⭐ Esta tienda cumple los 5 criterios</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="eval-nivel">Nivel actual &nbsp;<span>${stars} (${nivel}/5)</span></div>
+    <div class="star-grid">${chipsHtml}</div>
+    ${recomHtml}`;
 }
 
 /* ══════════════════════════════════════════════
@@ -1705,6 +1924,7 @@ async function init(){
         <div class="step wait"   id="step-hist-wm"><span class="step-icon"></span>Descargando histórico WM</div>
         <div class="step wait"   id="step-hist-ba"><span class="step-icon"></span>Descargando histórico BA</div>
         <div class="step wait"   id="step-hist-sc"><span class="step-icon"></span>Descargando histórico SC</div>
+        <div class="step wait"   id="step-eval"><span class="step-icon"></span>Cargando evaluación de tiendas</div>
         <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
       </div>
     </div>`;
@@ -1750,6 +1970,14 @@ async function init(){
     historicoMap.SC = parseHistorico(wb,'BA'); // Sam's: columnas Monto/$, Ventas/GE, PTTO — mismo estilo que el parser 'BA'
     step('step-hist-sc','done');
   } catch(e){ console.error('[Hist SC]',e); step('step-hist-sc','err'); }
+
+  step('step-eval','active');
+  try {
+    const buf = await fetchXlsx(URL_EVAL);
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: false });
+    evalMap   = parseEval(wb);
+    step('step-eval','done');
+  } catch(e){ console.error('[Eval]',e); step('step-eval','err'); }
 
   // ── DEBUG TEMPORAL: cruce de DETs de hoy vs cada mapa histórico ──
   { const hoy = allVisitas[key]||[];
