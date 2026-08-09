@@ -286,13 +286,14 @@
     display: flex; align-items: center; gap: 14px;
     box-shadow: 0 4px 20px rgba(0,120,212,0.4);
     flex-shrink: 0;
+    position: relative; z-index: 10;
   }
   .back-btn {
     background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
     border-radius: 50%; width: 38px; height: 38px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 1.3rem; color: #fff;
-    transition: background 0.2s;
+    cursor: pointer; color: #fff;
+    transition: background 0.2s; -webkit-tap-highlight-color: transparent;
   }
   .back-btn:hover { background: rgba(255,255,255,0.28); }
   .detail-store-info { flex: 1; min-width: 0; }
@@ -717,7 +718,11 @@
 <div id="store-detail-view" style="display:none;">
 
   <div class="detail-header">
-    <button class="back-btn" onclick="closeStoreDetail()" title="Regresar">←</button>
+    <button class="back-btn" onclick="closeStoreDetail()" title="Regresar">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 4L6 9L11 14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
     <div class="detail-store-info">
       <div class="detail-store-name" id="detail-store-name"></div>
       <div class="detail-store-sub"  id="detail-store-sub"></div>
@@ -737,7 +742,7 @@
     <div class="task-bar">
       <button class="new-task-btn" onclick="openTaskModal()">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
-        Nueva Acción
+        Nueva Tarea
       </button>
       <select class="task-filter-select" id="task-filter-select" onchange="setTaskFilter(this.value)">
         <option value="all">Todas</option>
@@ -752,7 +757,7 @@
   <div class="modal-overlay" id="task-modal-overlay" onclick="if(event.target===this)closeTaskModal()">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>Nueva Acción</h3>
+        <h3>Nueva Tarea</h3>
         <button class="modal-close" onclick="closeTaskModal()">✕</button>
       </div>
       <div class="modal-field">
@@ -1342,10 +1347,22 @@ function renderEvalSection(store) {
     </span>`
   ).join('');
 
+  // Normaliza nombres viejos del Excel → nombres cortos de la app
+  const PROXIMA_MAP = {
+    '≥12 ge':        'Vende',  'vende':       'Vende',
+    'sin decremento':'Crece',  'crece':        'Crece',
+    '≥meta anual':  'Cumple',  'meta anual':  'Cumple',  'meta': 'Cumple',  'cumple': 'Cumple',
+    '10 meses':     'Constancia', 'constancia':'Constancia',
+    'conversión':   'Eficiencia', 'conversion':'Eficiencia', 'eficiencia':'Eficiencia',
+  };
+  const proximaNorm = ev.proxima
+    ? (PROXIMA_MAP[(ev.proxima+'').trim().toLowerCase()] || ev.proxima)
+    : null;
+
   let recomHtml = '';
-  if (ev.proxima && ev.proxima !== '—') {
+  if (proximaNorm && proximaNorm !== '—') {
     recomHtml = `<div class="recom-box">
-      La siguiente estrella más fácil de lograr es <strong>${ev.proxima}</strong> — ${ev.como || ''}
+      La siguiente estrella más fácil de lograr es <strong>${proximaNorm}</strong> — ${ev.como || ''}
     </div>`;
   } else if (nivel === 5) {
     recomHtml = `<div class="recom-none">⭐ Esta tienda cumple los 5 criterios</div>`;
