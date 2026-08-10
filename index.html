@@ -1047,6 +1047,8 @@ function openStoreDetail(det) {
   const sel = document.getElementById('task-filter-select');
   if (sel) sel.value = 'all';
   document.getElementById('store-detail-view').style.display = 'flex';
+  // iOS Safari: forzar reflow síncrono para que los hijos flex y los hit-areas se calculen correctamente
+  void document.getElementById('store-detail-view').offsetHeight;
   renderEvalSection(store);
   switchTab('tareas');
   // Segundo render después de que el browser complete el layout del view
