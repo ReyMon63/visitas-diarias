@@ -704,7 +704,7 @@
   <div class="search-wrap">
     <div class="search-box" id="search-box">
       <span class="search-icon" onclick="toggleSearch()">🔍</span>
-      <input class="search-input" id="search-input" placeholder="Buscar..." onkeydown="if(event.key==='Enter')doSearch()" />
+      <input class="search-input" id="search-input" placeholder="Buscar..." inputmode="numeric" onkeydown="if(event.key==='Enter')doSearch()" />
       <span class="search-clear" onclick="clearSearch()">✕</span>
     </div>
   </div>
@@ -2314,7 +2314,7 @@ function toggleSearch(){
     else { box.classList.remove('expanded'); input.value=''; }
   } else {
     box.classList.add('expanded');
-    setTimeout(()=>input.focus(),50);
+    input.focus(); // síncrono: dentro del tap → iOS abre el teclado
   }
 }
 function clearSearch(){
@@ -2330,7 +2330,7 @@ function doSearch(){
 }
 function openSearchPopup(){
   document.getElementById('search-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('search-full-input').focus(),50);
+  document.getElementById('search-full-input').focus(); // síncrono: hereda el gesto del tap original
 }
 function closeSearch(){
   document.getElementById('search-overlay').classList.remove('open');
