@@ -1092,21 +1092,30 @@ function parseSegmentacion(wb) {
   const stores = []; const seen = new Set();
 
   for (const shName of wb.SheetNames) {
+    // Solo hojas "Territoriales WM/BA/SC" (tienen filtro por territorial).
+    // Saltamos "Territoriales" (solo mapeo de claves) y "Distritos *" (sin filtro).
+    if (!shName.toLowerCase().includes('territorial') ||
+        shName.toLowerCase() === 'territoriales') continue;
+
     const ws = wb.Sheets[shName];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
     if (!rows.length) continue;
 
     const first = rows[0];
-    const cDET  = col(first, 'DET','DTTE','Determinante','Clave','CLAVE');
-    const cNom  = col(first, 'Nombre','Tienda','Name','NOMBRE');
+    const cDET  = col(first, 'DET','DTTE','Determinante');
+    const cNom  = col(first, 'Nombre','Tienda','TIENDA','Name','NOMBRE','TDA','Club','CLUB');
     const cFmt  = col(first, 'Formato','Format','FORMATO');
     const cTer  = col(first, 'Territorial','TERRITORIAL');
     if (!cDET || !cNom) continue;
 
+    // Formato desde columna o derivado del nombre de la hoja (WM / BA / SC)
+    const shUpper = shName.toUpperCase();
+    const shFmt = shUpper.includes(' SC') ? 'SC' : shUpper.includes(' BA') ? 'BA' : shUpper.includes(' WM') ? 'WM' : '';
+
     for (const row of rows) {
       const det = String(row[cDET] || '').trim();
       const nom = String(row[cNom] || '').trim();
-      const fmt = String(row[cFmt] || '').trim().toUpperCase();
+      const fmt = (cFmt ? String(row[cFmt] || '').trim().toUpperCase() : '') || shFmt;
       const ter = String(row[cTer] || '').trim();
       if (!det || !nom || seen.has(det)) continue;
       // Filtrar por territorial si se conoce
