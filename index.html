@@ -704,7 +704,7 @@
   <div class="search-wrap">
     <div class="search-box" id="search-box">
       <span class="search-icon" onclick="toggleSearch()">🔍</span>
-      <input class="search-input" id="search-input" placeholder="Buscar..." inputmode="numeric" onkeydown="if(event.key==='Enter')doSearch()" />
+      <input class="search-input" id="search-input" placeholder="Buscar..." onkeydown="if(event.key==='Enter')doSearch()" />
       <span class="search-clear" onclick="clearSearch()">✕</span>
     </div>
   </div>
@@ -749,7 +749,7 @@
     </div>
     <div class="search-popup-body">
       <div class="search-field-wrap">
-        <input class="search-full-input" id="search-full-input" placeholder="Nombre o DET..." inputmode="numeric" onkeydown="if(event.key==='Enter')execSearch()" autofocus />
+        <input class="search-full-input" id="search-full-input" placeholder="Nombre o DET..." onkeydown="if(event.key==='Enter')execSearch()" autofocus />
         <button class="search-go-btn" onclick="execSearch()">Buscar</button>
       </div>
       <div id="search-results"></div>
