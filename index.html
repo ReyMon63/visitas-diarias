@@ -749,7 +749,7 @@
     </div>
     <div class="search-popup-body">
       <div class="search-field-wrap">
-        <input class="search-full-input" id="search-full-input" placeholder="Nombre o DET..." onkeydown="if(event.key==='Enter')execSearch()" autofocus />
+        <input class="search-full-input" id="search-full-input" placeholder="Nombre o DET..." inputmode="numeric" onkeydown="if(event.key==='Enter')execSearch()" autofocus />
         <button class="search-go-btn" onclick="execSearch()">Buscar</button>
       </div>
       <div id="search-results"></div>
@@ -872,6 +872,7 @@ const ID_HIST_BA = '12d-2aT8T69z9C9FN0Nh_V9L5pryeQDAT'; // HistricoBAconestrella
 const ID_HIST_SC = '1PV2kxUThRLorn8MlNJwRroXbKfusBBb1'; // HistricoSCconestrellas.xlsx (Sam's Club)
 const ID_EVAL     = '1BPuuY5J0sAxl7eatSbejcSK-NbpDb13A'; // EvaluaciónTiendas.xlsx (cols renombradas: Vende/Crece/Cumple/Constancia/Eficiencia)
 const ID_REPORTES = '11LFzbkEKpF6D7S_ITmJVqyCV8eDqlSk7'; // Diseño Reportes.xlsx (Config + Preguntas)
+const ID_SEG      = '1ATT-lme6ZGn7IA0R1GQaYASBgDZUEu4h'; // Archivo Segmentación (todas las tiendas del territorial)
 const REPORTE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9XOoUwNwijtOeEF_k7lIMO-CO-E7IPXO3QjssCEg9X8iIqM30JvlWuQLnwrWa_pr5/exec';
 const URL_RUTAS   = `https://docs.google.com/spreadsheets/d/${ID_RUTAS}/export?format=xlsx`;
 const URL_KPIS    = `https://docs.google.com/spreadsheets/d/${ID_KPIS}/export?format=xlsx`;
@@ -880,6 +881,7 @@ const URL_HIST_BA = `https://docs.google.com/spreadsheets/d/${ID_HIST_BA}/export
 const URL_HIST_SC = `https://docs.google.com/spreadsheets/d/${ID_HIST_SC}/export?format=xlsx`;
 const URL_EVAL     = `https://docs.google.com/spreadsheets/d/${ID_EVAL}/export?format=xlsx`;
 const URL_REPORTES = `https://docs.google.com/spreadsheets/d/${ID_REPORTES}/export?format=xlsx`;
+const URL_SEG      = `https://docs.google.com/spreadsheets/d/${ID_SEG}/export?format=xlsx`;
 const VISIT_COLS = ['Visita 1','Visita 2','Visita 3','Visita 4','Visita 5'];
 const SHEET_TO_FORMAT = { BA:'Bodega Aurrera', WM:'Supercenter', SMC:"Sam´s" };
 const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -907,6 +909,7 @@ let currentStore   = null;
 let currentTab     = 'tareas';
 let taskFilter     = 'all';
 let reporteConfig  = null; // { nombre, periodo, vigenciaInicio, vigenciaFin, preguntas:[] }
+let segmStores     = []; // [{DET, Nombre, Formato, Territorial}] — todas las tiendas del territorial
 let scannerReader  = null;
 let scannerActive  = false;
 let scanCooldown   = false;
@@ -1071,6 +1074,52 @@ function parseKpis(wb) {
 }
 
 /* ══════════════════════════════════════════════
+   SEGMENTACIÓN — parse y filtro por territorial
+══════════════════════════════════════════════ */
+function parseSegmentacion(wb) {
+  // Nombre del territorial activo (tomado de cualquier tienda ya cargada de las rutas)
+  const myTerritorial = (Object.values(storeDataMap)[0] || {}).Territorial || '';
+
+  const col = (row, ...keys) => {
+    const rk = Object.keys(row);
+    for (const k of keys) {
+      const found = rk.find(c => c.trim().toLowerCase().includes(k.toLowerCase()));
+      if (found !== undefined) return found;
+    }
+    return null;
+  };
+
+  const stores = []; const seen = new Set();
+
+  for (const shName of wb.SheetNames) {
+    const ws = wb.Sheets[shName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!rows.length) continue;
+
+    const first = rows[0];
+    const cDET  = col(first, 'DET','DTTE','Determinante','Clave','CLAVE');
+    const cNom  = col(first, 'Nombre','Tienda','Name','NOMBRE');
+    const cFmt  = col(first, 'Formato','Format','FORMATO');
+    const cTer  = col(first, 'Territorial','TERRITORIAL');
+    if (!cDET || !cNom) continue;
+
+    for (const row of rows) {
+      const det = String(row[cDET] || '').trim();
+      const nom = String(row[cNom] || '').trim();
+      const fmt = String(row[cFmt] || '').trim().toUpperCase();
+      const ter = String(row[cTer] || '').trim();
+      if (!det || !nom || seen.has(det)) continue;
+      // Filtrar por territorial si se conoce
+      if (myTerritorial && cTer && ter && ter !== myTerritorial) continue;
+      seen.add(det);
+      stores.push({ DET: det, Nombre: nom, Formato: fmt, Territorial: ter });
+    }
+  }
+  console.log(`[Segmentación] ${stores.length} tiendas cargadas para ${myTerritorial || '(sin filtro)'}`);
+  return stores;
+}
+
+/* ══════════════════════════════════════════════
    TASK STORAGE  (localStorage)
 ══════════════════════════════════════════════ */
 function getTasks(det) {
@@ -1110,7 +1159,7 @@ function openStoreDetail(det) {
     reporteConfig && reporteConfig.preguntas.some(p => aplicaAFormato(p.aplicaA, store.Formato));
   tabReporte.style.display = tieneReporte ? '' : 'none';
   renderEvalSection(store);
-  switchTab('tareas');
+  switchTab('noapl');   // "No Aplica" es la pestaña de entrada al detalle de tienda
   // Segundo render después de que el browser complete el layout del view
   requestAnimationFrame(() => renderTaskList());
 }
@@ -2291,13 +2340,18 @@ function execSearch(){
   const q=(document.getElementById('search-full-input').value||'').trim().toLowerCase();
   const resultsEl=document.getElementById('search-results');
   if(!q){ resultsEl.innerHTML=`<div class="no-result">Escribe un nombre o DET para buscar</div>`; return; }
+
+  // Fuente primaria: segmStores (todas las tiendas del territorial).
+  // Fallback: storeDataMap (tiendas del mes en ruta).
+  const pool = segmStores.length
+    ? segmStores.map(s => storeDataMap[s.DET] || s)  // enriquece con datos de ruta si disponible
+    : Object.values(storeDataMap);
+
   const seen=new Set(), matches=[];
-  for(const stores of Object.values(allVisitas)){
-    for(const s of stores){
-      if(seen.has(s.DET)) continue;
-      if(s.Nombre.toLowerCase().includes(q)||s.DET.includes(q)){
-        seen.add(s.DET); matches.push(s);
-      }
+  for(const s of pool){
+    if(seen.has(s.DET)) continue;
+    if((s.Nombre||'').toLowerCase().includes(q) || s.DET.includes(q)){
+      seen.add(s.DET); matches.push(s);
     }
   }
   if(!matches.length){
@@ -2352,6 +2406,7 @@ async function init(){
         <div class="step wait"   id="step-hist-ba"><span class="step-icon"></span>Descargando histórico BA</div>
         <div class="step wait"   id="step-hist-sc"><span class="step-icon"></span>Descargando histórico SC</div>
         <div class="step wait"   id="step-eval"><span class="step-icon"></span>Cargando evaluación de tiendas</div>
+        <div class="step wait"   id="step-seg"><span class="step-icon"></span>Cargando segmentación de tiendas</div>
         <div class="step wait"   id="step-reportes"><span class="step-icon"></span>Cargando diseño de reporte</div>
         <div class="step wait"   id="step-render"><span class="step-icon"></span>Construyendo vista del día</div>
       </div>
@@ -2406,6 +2461,19 @@ async function init(){
     evalMap   = parseEval(wb);
     step('step-eval','done');
   } catch(e){ console.error('[Eval]',e); step('step-eval','err'); }
+
+  step('step-seg','active');
+  try {
+    // Primero renderizamos las rutas del día para que storeDataMap tenga al menos
+    // las tiendas de hoy y podamos leer el nombre del territorial.
+    const todayStores = allVisitas[key] || [];
+    for (const s of todayStores) storeDataMap[s.DET] = s;
+
+    const buf = await fetchXlsx(URL_SEG);
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: false });
+    segmStores = parseSegmentacion(wb);
+    step('step-seg','done');
+  } catch(e){ console.error('[Seg]',e); step('step-seg','err'); }
 
   step('step-reportes','active');
   try {
